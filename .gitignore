@@ -1,0 +1,4 @@
+# 只发布 index.html，其余本地文件一律不上传到 GitHub
+/*
+!.gitignore
+!index.html

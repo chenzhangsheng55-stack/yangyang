@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#12041f">
+<title>致 阳阳 · 我的小护士 ❤</title>
+<style>
+:root{
+  --pink:#ff9ec7;
+  --deep-pink:#ff5c9d;
+  --gold:#ffd88a;
+  --gold-hot:#ffb648;
+  --glass:rgba(255,255,255,.09);
+  --glass-line:rgba(255,255,255,.22);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;overflow:hidden;background:#0a0313;}
+body{
+  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+  color:#fff;
+  position:fixed;inset:0;
+  touch-action:none;
+  -webkit-user-select:none;user-select:none;
+}
+
+/* ---------- 背景 ---------- */
+#skyGrad{
+  position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(120% 90% at 18% 8%,  rgba(255,138,190,.30) 0%, rgba(255,138,190,0) 55%),
+    radial-gradient(110% 80% at 85% 15%, rgba(255,196,120,.22) 0%, rgba(255,196,120,0) 50%),
+    radial-gradient(130% 100% at 50% 110%, rgba(150,80,255,.35) 0%, rgba(150,80,255,0) 60%),
+    linear-gradient(170deg,#1a0630 0%,#2a0a3d 28%,#3d0f42 52%,#25082f 78%,#0d0318 100%);
+}
+#skyGrad::after{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(70% 55% at 50% 48%, rgba(255,120,180,.16), rgba(0,0,0,0) 70%);
+  animation:auraBreath 7s ease-in-out infinite;
+}
+@keyframes auraBreath{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
+canvas{position:absolute;inset:0;display:block;}
+#bg{z-index:1}
+#heart{z-index:2}
+#fx{z-index:6;pointer-events:none}
+
+/* ---------- 中央名字 ---------- */
+.stage{
+  position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);
+  z-index:3;text-align:center;pointer-events:none;width:100%;
+}
+.name{
+  font-size:clamp(52px,13vw,120px);
+  font-weight:900;letter-spacing:.12em;
+  background:linear-gradient(180deg,#fff 0%,#ffe6f2 40%,#ffb0d4 70%,#ff77b0 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 14px rgba(255,120,180,.95)) drop-shadow(0 0 42px rgba(255,90,160,.75)) drop-shadow(0 0 80px rgba(255,180,90,.45));
+  animation:nameFloat 5s ease-in-out infinite;
+}
+@keyframes nameFloat{
+  0%,100%{transform:translateY(0) scale(1);filter:drop-shadow(0 0 14px rgba(255,120,180,.9)) drop-shadow(0 0 40px rgba(255,90,160,.7))}
+  50%{transform:translateY(-9px) scale(1.045);filter:drop-shadow(0 0 24px rgba(255,150,200,1)) drop-shadow(0 0 66px rgba(255,110,180,.95)) drop-shadow(0 0 110px rgba(255,190,110,.6))}
+}
+.name-sub{
+  margin-top:6px;font-size:clamp(11px,2.9vw,15px);letter-spacing:.5em;
+  color:rgba(255,225,240,.8);text-indent:.5em;
+  text-shadow:0 0 12px rgba(255,140,190,.9);
+}
+.name-line{
+  width:min(240px,52vw);height:1px;margin:12px auto 0;
+  background:linear-gradient(90deg,transparent,rgba(255,214,138,.85),transparent);
+  box-shadow:0 0 10px rgba(255,200,120,.7);
+}
+
+/* ---------- 顶部条 ---------- */
+.topbar{
+  position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);left:0;right:0;
+  z-index:8;display:flex;justify-content:space-between;align-items:center;
+  padding:0 16px;pointer-events:none;
+}
+.brand{
+  font-size:12px;letter-spacing:.28em;color:rgba(255,226,240,.72);
+  text-shadow:0 0 12px rgba(255,120,180,.8);pointer-events:none;
+}
+.brand b{color:var(--gold);font-weight:600}
+.music-btn{
+  pointer-events:auto;display:flex;align-items:center;gap:8px;
+  padding:9px 15px;border-radius:999px;cursor:pointer;
+  background:var(--glass);border:1px solid var(--glass-line);
+  backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%);
+  font-size:12px;letter-spacing:.1em;color:#fff;
+  box-shadow:0 6px 26px rgba(255,90,160,.22), inset 0 1px 0 rgba(255,255,255,.28);
+  transition:.28s;
+}
+.music-btn:active{transform:scale(.94)}
+.music-btn.on{background:linear-gradient(135deg,rgba(255,150,200,.35),rgba(255,205,130,.28));border-color:rgba(255,200,140,.55)}
+.eq{display:flex;align-items:flex-end;gap:2px;height:13px}
+.eq i{width:2.5px;height:4px;border-radius:2px;background:var(--gold);display:block;opacity:.55}
+.music-btn.on .eq i{animation:eqb .8s ease-in-out infinite;opacity:1}
+.music-btn.on .eq i:nth-child(2){animation-delay:.16s}
+.music-btn.on .eq i:nth-child(3){animation-delay:.32s}
+.music-btn.on .eq i:nth-child(4){animation-delay:.48s}
+@keyframes eqb{0%,100%{height:4px}50%{height:13px}}
+
+/* ---------- 控制台 ---------- */
+.console{
+  position:absolute;left:50%;transform:translateX(-50%);
+  bottom:calc(env(safe-area-inset-bottom,0px) + 20px);
+  z-index:9;width:min(760px,94vw);padding:16px 14px 14px;border-radius:26px;
+  background:linear-gradient(160deg,rgba(255,255,255,.14),rgba(255,255,255,.05));
+  border:1px solid var(--glass-line);
+  backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);
+  box-shadow:0 18px 60px rgba(90,0,60,.5), inset 0 1px 0 rgba(255,255,255,.35), 0 0 0 1px rgba(255,160,200,.10);
+}
+.console-title{
+  text-align:center;font-size:11px;letter-spacing:.42em;text-indent:.42em;
+  color:rgba(255,226,240,.62);margin-bottom:12px;
+}
+.console-title span{color:var(--gold);}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;}
+@media(max-width:640px){.grid{grid-template-columns:repeat(3,1fr);gap:9px}}
+.pill{
+  position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+  padding:13px 4px 11px;border-radius:19px;cursor:pointer;overflow:hidden;
+  background:linear-gradient(160deg,rgba(255,255,255,.13),rgba(255,255,255,.04));
+  border:1px solid rgba(255,255,255,.18);
+  transition:transform .22s cubic-bezier(.2,1.4,.4,1), box-shadow .28s, border-color .28s;
+}
+.pill::after{
+  content:"";position:absolute;inset:0;border-radius:19px;opacity:0;transition:.35s;
+  background:radial-gradient(70% 70% at 50% 0%, rgba(255,190,220,.4), transparent 70%);
+}
+.pill:hover{transform:translateY(-6px);border-color:rgba(255,190,220,.6);box-shadow:0 12px 30px rgba(255,80,150,.35)}
+.pill:hover::after{opacity:1}
+.pill:active{transform:translateY(-1px) scale(.95)}
+.pill svg{width:32px;height:32px;filter:drop-shadow(0 0 8px rgba(255,180,215,.9))}
+.pill span{font-size:11.5px;letter-spacing:.06em;color:#ffeaf4;white-space:nowrap}
+.pill.fire{animation:pillFire .6s ease}
+@keyframes pillFire{0%{transform:scale(1)}35%{transform:scale(1.16) rotate(-4deg)}100%{transform:scale(1)}}
+
+/* 针筒推射动画 */
+#plunger{transition:transform .42s cubic-bezier(.5,-0.3,.3,1.5)}
+.pill.shoot #plunger{transform:translateX(9px)}
+
+/* ---------- 情话卡片 ---------- */
+.card{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-46%) scale(.86);
+  z-index:20;width:min(560px,90vw);padding:34px 30px 30px;border-radius:26px;
+  background:linear-gradient(160deg,rgba(60,10,45,.86),rgba(30,6,30,.9));
+  border:1px solid rgba(255,190,225,.4);
+  backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
+  box-shadow:0 30px 90px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.28), 0 0 60px rgba(255,90,160,.28);
+  opacity:0;pointer-events:none;transition:.55s cubic-bezier(.2,1.2,.35,1);
+}
+.card.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+.card h3{
+  font-size:13px;letter-spacing:.3em;color:var(--gold);font-weight:600;margin-bottom:16px;text-align:center;
+  text-shadow:0 0 14px rgba(255,190,110,.7);
+}
+.card p{font-size:clamp(15px,3.6vw,17.5px);line-height:2.05;color:#fff2f8;text-shadow:0 0 16px rgba(255,120,180,.45)}
+.card .heartmark{text-align:center;font-size:20px;margin-top:16px;color:var(--deep-pink);animation:beat 1.1s ease-in-out infinite}
+@keyframes beat{0%,100%{transform:scale(1)}18%{transform:scale(1.28)}36%{transform:scale(1.05)}54%{transform:scale(1.22)}}
+.close{
+  position:absolute;top:12px;right:14px;width:30px;height:30px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#ffd9ea;font-size:15px;transition:.25s;
+}
+.close:hover{background:rgba(255,120,170,.4);transform:rotate(90deg)}
+
+/* ---------- 处方卷轴 ---------- */
+.scroll-wrap{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  z-index:22;width:min(520px,92vw);opacity:0;pointer-events:none;transition:opacity .35s;
+}
+.scroll-wrap.show{opacity:1;pointer-events:auto}
+.rod{
+  height:16px;border-radius:9px;
+  background:linear-gradient(180deg,#ffe6ad,#c58f3d 45%,#8a5a17 100%);
+  box-shadow:0 4px 18px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.6);
+  position:relative;
+}
+.rod::before,.rod::after{
+  content:"";position:absolute;top:50%;width:15px;height:24px;border-radius:5px;transform:translateY(-50%);
+  background:linear-gradient(180deg,#ffeec0,#b9832f);box-shadow:0 3px 10px rgba(0,0,0,.5);
+}
+.rod::before{left:-9px}.rod::after{right:-9px}
+.paper{
+  max-height:0;overflow:hidden;transition:max-height .85s cubic-bezier(.22,1,.3,1);
+  background:linear-gradient(175deg,#fff9ef,#ffeedd 55%,#ffe3d2);
+  color:#5a3524;box-shadow:0 24px 70px rgba(0,0,0,.6);
+  border-left:1px solid rgba(190,140,90,.35);border-right:1px solid rgba(190,140,90,.35);
+}
+.scroll-wrap.show .paper{max-height:74vh;overflow-y:auto}
+.paper-in{padding:24px 26px 26px}
+.rx-top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #d9a86e;padding-bottom:10px}
+.rx-top h2{font-size:19px;color:#a4361f;letter-spacing:.14em}
+.rx-top small{font-size:10.5px;color:#a8825f;letter-spacing:.1em}
+.rx-row{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:#7a5334;margin:12px 0 4px}
+.rx-big{font-size:30px;color:#a4361f;font-weight:700;margin:8px 0 2px;font-family:Georgia,serif}
+.paper ul{list-style:none;margin:6px 0 0}
+.paper li{
+  font-size:14px;line-height:1.95;padding:7px 0 7px 26px;position:relative;border-bottom:1px dashed rgba(180,130,90,.35);
+}
+.paper li::before{content:"❤";position:absolute;left:4px;top:7px;color:#e0587f;font-size:12px}
+.rx-foot{margin-top:14px;display:flex;justify-content:space-between;align-items:flex-end;font-size:12px;color:#7a5334}
+.stamp{
+  border:2.5px solid #c0392b;color:#c0392b;border-radius:8px;padding:5px 9px;font-size:11px;
+  transform:rotate(-11deg);opacity:.85;letter-spacing:.08em;line-height:1.35;text-align:center;
+}
+
+/* ---------- 字幕 ---------- */
+.subtitle{
+  position:absolute;left:50%;top:72%;transform:translate(-50%,10px);
+  z-index:12;font-size:clamp(15px,4vw,20px);letter-spacing:.09em;white-space:nowrap;
+  color:#fff;text-shadow:0 0 20px rgba(255,90,160,1),0 0 44px rgba(255,60,140,.75);
+  opacity:0;transition:.5s;pointer-events:none;font-weight:500;
+}
+.subtitle.show{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- 体温计 ---------- */
+.thermo{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.7);
+  z-index:21;opacity:0;pointer-events:none;transition:.5s cubic-bezier(.2,1.3,.4,1);text-align:center;
+}
+.thermo.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.tube{
+  width:44px;height:230px;margin:0 auto;border-radius:24px;position:relative;
+  background:linear-gradient(90deg,rgba(255,255,255,.1),rgba(255,255,255,.3),rgba(255,255,255,.08));
+  border:2px solid rgba(255,255,255,.55);overflow:hidden;
+  box-shadow:0 0 40px rgba(255,120,170,.75), inset 0 0 22px rgba(255,255,255,.28);
+}
+.merc{
+  position:absolute;left:0;right:0;bottom:0;height:6%;
+  background:linear-gradient(180deg,#ffde5c,#ff7ab0 45%,#ff2d78);
+  box-shadow:0 0 26px rgba(255,60,130,1);
+  transition:height 1.15s cubic-bezier(.5,0,.2,1);
+}
+.bulb{
+  width:64px;height:64px;border-radius:50%;margin:-18px auto 0;
+  background:radial-gradient(circle at 34% 30%,#ff9bc4,#ff2d78 70%);
+  box-shadow:0 0 46px rgba(255,45,120,1), inset 0 -6px 14px rgba(0,0,0,.3);
+  animation:beat 1s ease-in-out infinite;
+}
+.temp-num{
+  margin-top:18px;font-size:44px;font-weight:900;font-family:Georgia,serif;
+  background:linear-gradient(180deg,#fff,#ffc0dd,#ff5c9d);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 16px rgba(255,80,150,.95));
+}
+.temp-tip{font-size:13px;letter-spacing:.16em;color:#ffd9ea;margin-top:4px;text-shadow:0 0 14px rgba(255,110,170,.9)}
+
+/* 呼吸灯 */
+.warmlight{position:absolute;inset:0;z-index:7;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at 50% 50%, rgba(255,150,190,.45), rgba(255,90,150,.22) 45%, rgba(255,60,130,0) 78%);}
+.warmlight.on{animation:warmB 2.6s ease-in-out 3}
+@keyframes warmB{0%,100%{opacity:0}50%{opacity:1}}
+
+/* ---------- 创可贴 ---------- */
+.bandaid{
+  position:absolute;left:50%;top:50%;z-index:21;pointer-events:none;
+  transform:translate(-50%,-50%) rotate(-18deg) scale(.3);opacity:0;
+}
+.bandaid.play{animation:baIn 4.2s ease forwards}
+@keyframes baIn{
+  0%{opacity:0;transform:translate(-50%,-50%) rotate(-40deg) scale(.3)}
+  18%{opacity:1;transform:translate(-50%,-50%) rotate(-18deg) scale(1.14)}
+  26%{transform:translate(-50%,-50%) rotate(-18deg) scale(1)}
+  70%{opacity:1;transform:translate(-50%,-50%) rotate(-18deg) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-58%) rotate(-18deg) scale(1.06)}
+}
+
+/* ---------- 提示 ---------- */
+.hint{
+  position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 190px);transform:translateX(-50%);
+  z-index:10;font-size:12px;letter-spacing:.22em;color:rgba(255,220,238,.6);
+  text-shadow:0 0 12px rgba(255,110,170,.8);animation:hintFade 6s ease forwards;pointer-events:none;white-space:nowrap;
+}
+@keyframes hintFade{0%{opacity:0}20%{opacity:1}75%{opacity:1}100%{opacity:0}}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:rgba(200,140,100,.45);border-radius:4px}
+</style>
+</head>
+<body>
+
+<div id="skyGrad"></div>
+<canvas id="bg"></canvas>
+<canvas id="heart"></canvas>
+<div class="warmlight" id="warmlight"></div>
+<canvas id="fx"></canvas>
+
+<div class="stage">
+  <div class="name">阳阳</div>
+  <div class="name-sub">吕 · 我 的 小 护 士</div>
+  <div class="name-line"></div>
+</div>
+
+<div class="topbar">
+  <div class="brand">FOR <b>YANG YANG</b> · 心 跳 频 率 100%</div>
+  <div class="music-btn" id="musicBtn">
+    <div class="eq"><i></i><i></i><i></i><i></i></div><span id="musicTxt">浪漫音乐</span>
+  </div>
+</div>
+
+<div class="subtitle" id="subtitle"></div>
+
+<!-- 六大魔药控制台 -->
+<div class="console">
+  <div class="console-title">阳 阳 专 属 · <span>六 大 魔 药 治 疗 台</span></div>
+  <div class="grid">
+    <div class="pill" data-act="capsule">
+      <svg viewBox="0 0 48 48" fill="none">
+        <defs><linearGradient id="gcap" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff3a8"/><stop offset=".5" stop-color="#ff9ec7"/><stop offset="1" stop-color="#a06bff"/></linearGradient></defs>
+        <rect x="8" y="16" width="32" height="16" rx="8" fill="url(#gcap)"/>
+        <path d="M16 16h8v16h-8a8 8 0 0 1 0-16z" fill="#fff" opacity=".82"/>
+        <rect x="8" y="16" width="32" height="16" rx="8" stroke="#fff" stroke-opacity=".85" stroke-width="1.6"/>
+        <circle cx="14" cy="21" r="1.6" fill="#fff"/>
+      </svg><span>元气胶囊</span>
+    </div>
+
+    <div class="pill" data-act="steth">
+      <svg viewBox="0 0 48 48" fill="none" stroke="#ffd0e6" stroke-width="2.4" stroke-linecap="round">
+        <path d="M15 8v9a8 8 0 0 0 16 0V8"/>
+        <path d="M23 25v6a9 9 0 0 0 9 9 7 7 0 0 0 7-7v-4"/>
+        <circle cx="39" cy="24" r="4" fill="#ff9ec7" stroke="#fff"/>
+        <circle cx="15" cy="8" r="2.4" fill="#ffd88a" stroke="none"/>
+        <circle cx="31" cy="8" r="2.4" fill="#ffd88a" stroke="none"/>
+      </svg><span>听诊器</span>
+    </div>
+
+    <div class="pill" data-act="syringe">
+      <svg viewBox="0 0 48 48" fill="none" stroke="#ffd0e6" stroke-width="2.3" stroke-linecap="round">
+        <g id="plunger"><path d="M6 24h8M10 19v10"/></g>
+        <rect x="14" y="17.5" width="19" height="13" rx="2.5" fill="rgba(255,158,199,.4)" stroke="#fff"/>
+        <path d="M19 17.5v13M24 17.5v13M29 17.5v13" stroke="#fff" stroke-opacity=".55" stroke-width="1.4"/>
+        <path d="M33 24h5M38 24l6 0" stroke="#ffd88a"/>
+        <circle cx="44" cy="24" r="1.6" fill="#ff5c9d" stroke="none"/>
+      </svg><span>甜蜜针筒</span>
+    </div>
+
+    <div class="pill" data-act="rx">
+      <svg viewBox="0 0 48 48" fill="none">
+        <rect x="11" y="7" width="26" height="34" rx="3" fill="rgba(255,249,239,.94)"/>
+        <path d="M16 15h10M16 21h16M16 27h16M16 33h11" stroke="#e07a9c" stroke-width="2.1" stroke-linecap="round"/>
+        <path d="M28 11l4 4M32 11l-4 4" stroke="#c0392b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M11 7h26" stroke="#ffd88a" stroke-width="3" stroke-linecap="round"/>
+      </svg><span>恋爱处方笺</span>
+    </div>
+
+    <div class="pill" data-act="thermo">
+      <svg viewBox="0 0 48 48" fill="none">
+        <rect x="19" y="5" width="10" height="27" rx="5" fill="rgba(255,255,255,.25)" stroke="#fff" stroke-width="1.8"/>
+        <rect x="21.5" y="16" width="5" height="16" fill="#ff4d8f"/>
+        <circle cx="24" cy="37" r="7" fill="#ff2d78"/>
+        <path d="M31 11h5M31 16h4M31 21h5" stroke="#ffd88a" stroke-width="1.8" stroke-linecap="round"/>
+      </svg><span>真心体温计</span>
+    </div>
+
+    <div class="pill" data-act="band">
+      <svg viewBox="0 0 48 48" fill="none">
+        <g transform="rotate(-38 24 24)">
+          <rect x="5" y="17" width="38" height="14" rx="7" fill="#ffc59b" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+          <rect x="16" y="17" width="16" height="14" fill="#ffe4c9"/>
+          <circle cx="20" cy="21.5" r="1.1" fill="#e0956a"/><circle cx="24" cy="24" r="1.1" fill="#e0956a"/>
+          <circle cx="28" cy="26.5" r="1.1" fill="#e0956a"/><circle cx="28" cy="21.5" r="1.1" fill="#e0956a"/>
+          <circle cx="20" cy="26.5" r="1.1" fill="#e0956a"/>
+        </g>
+      </svg><span>治愈创可贴</span>
+    </div>
+  </div>
+</div>
+
+<!-- 情话卡 -->
+<div class="card" id="card">
+  <div class="close" id="cardClose">✕</div>
+  <h3 id="cardTitle">元 气 胶 囊 · 已 服 用</h3>
+  <p id="cardText"></p>
+  <div class="heartmark">❤</div>
+</div>
+
+<!-- 处方卷轴 -->
+<div class="scroll-wrap" id="scrollWrap">
+  <div class="rod"></div>
+  <div class="paper">
+    <div class="paper-in">
+      <div class="close" id="rxClose" style="color:#a4361f;background:rgba(192,57,43,.1);border-color:rgba(192,57,43,.3)">✕</div>
+      <div class="rx-top">
+        <div><h2>终 身 恋 爱 医 嘱</h2><small>LOVE PRESCRIPTION · NO.520</small></div>
+        <small>科室：心内科<br>永久有效</small>
+      </div>
+      <div class="rx-row">
+        <span>患者：<b>阳阳小护士</b></span><span>年龄：永远十八</span><span>性别：可爱</span>
+      </div>
+      <div class="rx-row" style="margin-top:2px">
+        <span>诊断：被我爱得无可救药（重度）</span>
+      </div>
+      <div class="rx-big">R<span style="font-size:20px">x</span></div>
+      <ul>
+        <li>拥抱 <b>×3 次/日</b>，饭后服用效果更佳；下夜班回家立刻加服一次，不可漏服。</li>
+        <li>晚安吻 <b>×1 枚/晚</b>，睡前含服，可显著改善入睡困难与多梦。</li>
+        <li>每次值夜班，随身携带我的想念 <b>2400mg</b>，凌晨三点最困的时候拆开。</li>
+        <li>连上白班超过 8 小时者，须由男朋友按摩肩颈 <b>15 分钟</b>，并禁止说“我不累”。</li>
+        <li>护士站的委屈、病人的不理解、写不完的护理记录，一律带回家，由我全部签收。</li>
+        <li>忌：熬夜刷手机、饿着肚子上班、一个人偷偷难过、把所有温柔都给了别人却忘了自己。</li>
+        <li>宜：多喝热水、按时吃饭、想我、笑、以及理直气壮地被我宠着。</li>
+        <li>疗程：<b>此生不停药，终身随诊，复诊时间为余生每一天。</b></li>
+      </ul>
+      <div class="rx-foot">
+        <div>医师签名：<b style="font-family:Georgia,serif;font-size:16px;color:#a4361f">你 的 男 朋 友</b><br>
+        <span style="font-size:11px">日期：从遇见你那天 —— 直到很久很久以后</span></div>
+        <div class="stamp">爱 情<br>专 用 章</div>
+      </div>
+    </div>
+  </div>
+  <div class="rod"></div>
+</div>
+
+<!-- 体温计 -->
+<div class="thermo" id="thermo">
+  <div class="tube"><div class="merc" id="merc"></div></div>
+  <div class="bulb"></div>
+  <div class="temp-num" id="tempNum">36.5℃</div>
+  <div class="temp-tip">检 测 对 象：我 对 阳 阳 的 真 心</div>
+</div>
+
+<!-- 创可贴 -->
+<div class="bandaid" id="bandaid">
+  <svg width="300" height="150" viewBox="0 0 300 150">
+    <defs>
+      <linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#ffd6b0"/><stop offset=".5" stop-color="#ffc094"/><stop offset="1" stop-color="#f0a377"/>
+      </linearGradient>
+      <filter id="bshadow" x="-30%" y="-40%" width="160%" height="190%">
+        <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#5a1030" flood-opacity=".55"/>
+      </filter>
+    </defs>
+    <g transform="rotate(-8 150 75)" filter="url(#bshadow)">
+      <rect x="20" y="45" width="260" height="62" rx="31" fill="url(#bg1)"/>
+      <rect x="105" y="45" width="90" height="62" fill="#fff1e0"/>
+      <g fill="#e29a6d">
+        <circle cx="45" cy="62" r="2.6"/><circle cx="60" cy="76" r="2.6"/><circle cx="45" cy="90" r="2.6"/>
+        <circle cx="75" cy="62" r="2.6"/><circle cx="90" cy="76" r="2.6"/><circle cx="75" cy="90" r="2.6"/>
+        <circle cx="215" cy="62" r="2.6"/><circle cx="230" cy="76" r="2.6"/><circle cx="215" cy="90" r="2.6"/>
+        <circle cx="245" cy="62" r="2.6"/><circle cx="260" cy="76" r="2.6"/><circle cx="245" cy="90" r="2.6"/>
+      </g>
+      <path d="M150 92c-14-10-24-18-24-28a12 12 0 0 1 24-6 12 12 0 0 1 24 6c0 10-10 18-24 28z" fill="#ff5c9d"/>
+    </g>
+  </svg>
+</div>
+
+<div class="hint" id="hint">✦ 轻 触 或 滑 动 屏 幕 任 意 处 · 会 开 出 烟 花 ✦</div>
+
+<script>
+"use strict";
+/* =========================================================
+   致 阳阳 —— 单文件浪漫引擎
+   Canvas 粒子 / 3D 心 / Web Audio / SVG
+   ========================================================= */
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+const MOBILE = Math.min(innerWidth, innerHeight) < 620;
+let W = innerWidth, H = innerHeight;
+
+const cvBg = document.getElementById('bg');
+const cvHeart = document.getElementById('heart');
+const cvFx = document.getElementById('fx');
+const ctxBg = cvBg.getContext('2d');
+const ctxHeart = cvHeart.getContext('2d');
+const ctxFx = cvFx.getContext('2d');
+
+function fit(c, x){
+  c.width = W * DPR; c.height = H * DPR;
+  c.style.width = W + 'px'; c.style.height = H + 'px';
+  x.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+function resize(){
+  W = innerWidth; H = innerHeight;
+  fit(cvBg, ctxBg); fit(cvHeart, ctxHeart); fit(cvFx, ctxFx);
+  buildHeart(); buildStars();
+}
+addEventListener('resize', resize);
+addEventListener('orientationchange', () => setTimeout(resize, 260));
+
+/* ---------- 发光贴图（比 shadowBlur 快很多） ---------- */
+function makeGlow(rgb, size){
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const x = c.getContext('2d');
+  const g = x.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+  g.addColorStop(0,   'rgba(' + rgb + ',1)');
+  g.addColorStop(0.22,'rgba(' + rgb + ',0.75)');
+  g.addColorStop(0.55,'rgba(' + rgb + ',0.20)');
+  g.addColorStop(1,   'rgba(' + rgb + ',0)');
+  x.fillStyle = g; x.fillRect(0,0,size,size);
+  return c;
+}
+const SPR = {
+  pink:  makeGlow('255,110,175', 64),
+  rose:  makeGlow('255,60,130', 64),
+  white: makeGlow('255,235,245', 64),
+  gold:  makeGlow('255,205,110', 64),
+  violet:makeGlow('190,120,255', 64)
+};
+
+/* =========================================================
+   1) 背景：星星 / 流星 / 落心
+   ========================================================= */
+let stars = [], meteors = [], fallHearts = [];
+function buildStars(){
+  stars = [];
+  const n = Math.round((W * H) / (MOBILE ? 7000 : 4200));
+  for (let i = 0; i < n; i++){
+    stars.push({
+      x: Math.random()*W, y: Math.random()*H,
+      r: Math.random()*1.35 + .3,
+      a: Math.random(), sp: Math.random()*.022 + .005,
+      hue: Math.random() < .28 ? 42 : (Math.random() < .5 ? 330 : 0)
+    });
+  }
+}
+function spawnMeteor(){
+  const fromTop = Math.random() < .55;
+  meteors.push({
+    x: fromTop ? Math.random()*W*1.15 - W*.1 : W + 40,
+    y: fromTop ? -60 : Math.random()*H*.5,
+    vx: -(Math.random()*3.4 + 4.4),
+    vy: (Math.random()*2.2 + 3.0),
+    len: Math.random()*160 + 110,
+    life: 1,
+    gold: Math.random() < .45
+  });
+}
+function spawnFallHeart(){
+  fallHearts.push({
+    x: Math.random()*W, y: -30,
+    s: Math.random()*10 + 7,
+    vy: Math.random()*.55 + .28,
+    sway: Math.random()*Math.PI*2,
+    swaySp: Math.random()*.017 + .008,
+    rot: (Math.random()-.5)*.5,
+    a: Math.random()*.45 + .38,
+    hue: 330 + Math.random()*28
+  });
+}
+function heartPath(x, y, s, ctx){
+  ctx.beginPath();
+  ctx.moveTo(x, y + s*.32);
+  ctx.bezierCurveTo(x, y - s*.12, x - s*.62, y - s*.12, x - s*.62, y + s*.28);
+  ctx.bezierCurveTo(x - s*.62, y + s*.72, x, y + s*.98, x, y + s*1.22);
+  ctx.bezierCurveTo(x, y + s*.98, x + s*.62, y + s*.72, x + s*.62, y + s*.28);
+  ctx.bezierCurveTo(x + s*.62, y - s*.12, x, y - s*.12, x, y + s*.32);
+  ctx.closePath();
+}
+function drawBg(t){
+  ctxBg.clearRect(0,0,W,H);
+
+  /* 星星 */
+  for (const s of stars){
+    s.a += s.sp;
+    const tw = .45 + .55 * Math.abs(Math.sin(s.a));
+    ctxBg.globalAlpha = tw * .92;
+    ctxBg.fillStyle = s.hue === 42 ? '#ffdd9c' : (s.hue === 330 ? '#ffc2de' : '#ffffff');
+    ctxBg.beginPath(); ctxBg.arc(s.x, s.y, s.r, 0, 6.283); ctxBg.fill();
+    if (s.r > 1.15){
+      ctxBg.globalAlpha = tw * .30;
+      ctxBg.beginPath(); ctxBg.arc(s.x, s.y, s.r*3.4, 0, 6.283); ctxBg.fill();
+    }
+  }
+  ctxBg.globalAlpha = 1;
+
+  /* 流星 */
+  if (Math.random() < .016) spawnMeteor();
+  ctxBg.lineCap = 'round';
+  for (let i = meteors.length - 1; i >= 0; i--){
+    const m = meteors[i];
+    m.x += m.vx; m.y += m.vy; m.life -= .0055;
+    const k = m.len / Math.hypot(m.vx, m.vy);
+    const g = ctxBg.createLinearGradient(m.x, m.y, m.x - m.vx*k, m.y - m.vy*k);
+    const col = m.gold ? '255,214,140' : '255,180,220';
+    g.addColorStop(0, 'rgba(255,255,255,' + (m.life*.95) + ')');
+    g.addColorStop(.25, 'rgba(' + col + ',' + (m.life*.7) + ')');
+    g.addColorStop(1, 'rgba(' + col + ',0)');
+    ctxBg.strokeStyle = g; ctxBg.lineWidth = 2.1;
+    ctxBg.beginPath(); ctxBg.moveTo(m.x, m.y); ctxBg.lineTo(m.x - m.vx*k, m.y - m.vy*k); ctxBg.stroke();
+    ctxBg.globalCompositeOperation = 'lighter';
+    ctxBg.globalAlpha = m.life;
+    ctxBg.drawImage(m.gold ? SPR.gold : SPR.white, m.x - 14, m.y - 14, 28, 28);
+    ctxBg.globalAlpha = 1;
+    ctxBg.globalCompositeOperation = 'source-over';
+    if (m.life <= 0 || m.y > H + 80 || m.x < -220) meteors.splice(i,1);
+  }
+
+  /* 治愈小红心 */
+  if (Math.random() < (MOBILE ? .11 : .16)) spawnFallHeart();
+  for (let i = fallHearts.length - 1; i >= 0; i--){
+    const f = fallHearts[i];
+    f.y += f.vy; f.sway += f.swaySp;
+    const x = f.x + Math.sin(f.sway) * 26;
+    ctxBg.save();
+    ctxBg.translate(x, f.y);
+    ctxBg.rotate(Math.sin(f.sway) * f.rot);
+    ctxBg.globalAlpha = f.a;
+    ctxBg.fillStyle = 'hsl(' + f.hue + ',95%,' + (66 + Math.sin(f.sway)*7) + '%)';
+    ctxBg.shadowColor = 'rgba(255,80,150,.95)'; ctxBg.shadowBlur = 14;
+    heartPath(0, -f.s*.6, f.s, ctxBg); ctxBg.fill();
+    ctxBg.restore();
+    if (f.y > H + 40) fallHearts.splice(i,1);
+  }
+  ctxBg.globalAlpha = 1;
+}
+
+/* =========================================================
+   2) 3D 粒子爱心 + 金色心电图
+   ========================================================= */
+let hp = [];              // heart particles
+let hUnit = 1, hCX = 0, hCY = 0;
+const HEART_N = MOBILE ? 1500 : 3000;
+
+function heartOutline(t){  // t ∈ [0,π] → 心形右半轮廓
+  const s = Math.sin(t);
+  return {
+    x: 16 * s * s * s,
+    y: 13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t) + 6
+  };
+}
+function buildHeart(){
+  hUnit = Math.min(W, H) * (MOBILE ? 0.0165 : 0.0175);
+  hCX = W / 2; hCY = H * 0.47;
+  hp = [];
+  for (let i = 0; i < HEART_N; i++){
+    // 75% 按旋转半径做拒绝采样（表面密度均匀），25% 均匀采样（保住尖底轮廓）
+    let t;
+    if (Math.random() < .75){
+      for (let k = 0; k < 24; k++){
+        t = Math.random() * Math.PI;
+        const s = Math.sin(t);
+        if (Math.random() < s*s*s) break;
+      }
+    } else {
+      t = Math.random() * Math.PI;
+    }
+    const p = heartOutline(t);
+    const phi = Math.random() * Math.PI * 2;
+    // 90% 贴表面，10% 填充内部制造体积感
+    const shell = Math.random() < .9 ? 1 : (0.35 + Math.random()*0.6);
+    const jit = 1 + (Math.random() - .5) * .05;
+    hp.push({
+      r: p.x * shell * jit,
+      y: p.y * (shell*0.14 + 0.86) * jit,
+      phi: phi,
+      spin: (Math.random()-.5) * .0012,
+      tw: Math.random() * Math.PI * 2,
+      twSp: Math.random() * .05 + .015,
+      sz: Math.random() * 1.5 + .75,
+      spr: Math.random() < .07 ? SPR.white : (Math.random() < .30 ? SPR.gold : (Math.random() < .55 ? SPR.rose : SPR.pink))
+    });
+  }
+}
+
+/* 心电图波形 PQRST */
+function ecg(x){
+  x = x - Math.floor(x);
+  if (x < 0.10) return 0;
+  if (x < 0.18) return 0.16 * Math.sin(Math.PI * (x - 0.10) / 0.08);         // P
+  if (x < 0.27) return 0;
+  if (x < 0.305) return -0.22 * ((x - 0.27) / 0.035);                        // Q
+  if (x < 0.345) return -0.22 + 1.28 * ((x - 0.305) / 0.04);                 // R ↑
+  if (x < 0.385) return 1.06 - 1.50 * ((x - 0.345) / 0.04);                  // S ↓
+  if (x < 0.44)  return -0.44 + 0.44 * ((x - 0.385) / 0.055);
+  if (x < 0.50) return 0;
+  if (x < 0.66) return 0.30 * Math.sin(Math.PI * (x - 0.50) / 0.16);         // T
+  return 0;
+}
+/* 心跳律动：lub-dub 双跳 */
+function beatEnv(tt){
+  const p = (tt % 1.05) / 1.05;
+  let e = Math.exp(-Math.pow((p - .06) / .075, 2)) * 1.0
+        + Math.exp(-Math.pow((p - .30) / .085, 2)) * 0.62;
+  return e;
+}
+
+let rotY = 0, ecgPhase = 0;
+function drawHeart(t, dt){
+  ctxHeart.clearRect(0,0,W,H);
+  ctxHeart.globalCompositeOperation = 'lighter';
+
+  const env = beatEnv(t);
+  const pulse = 1 + env * 0.075;                 // 呼吸放大
+  const glowK = 0.62 + env * 0.55;               // 呼吸亮度
+  rotY += dt * 0.00042;
+  const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+  const tiltC = Math.cos(-0.12), tiltS = Math.sin(-0.12);
+  const FOV = 900;
+  const U = hUnit * pulse;
+
+  for (let i = 0; i < hp.length; i++){
+    const p = hp[i];
+    p.phi += p.spin; p.tw += p.twSp;
+    const c = Math.cos(p.phi), s = Math.sin(p.phi);
+    // 旋转体 → 3D
+    let X = p.r * c, Z = p.r * s * 0.78, Y = p.y;
+    // 绕 Y 轴自转
+    const X2 = X * cosY - Z * sinY;
+    const Z2 = X * sinY + Z * cosY;
+    // 轻微前倾
+    const Y2 = Y * tiltC - Z2 * tiltS;
+    const Z3 = Y * tiltS + Z2 * tiltC;
+
+    const zz = Z3 * U;
+    const sc = FOV / (FOV + zz + 260);
+    const sx = hCX + X2 * U * sc;
+    const sy = hCY - Y2 * U * sc;
+
+    const depth = (zz + 300) / 600;                        // 0 远 → 1 近
+    const twk = .55 + .45 * Math.sin(p.tw);
+    let a = (0.20 + 0.68 * depth) * twk * glowK;
+    if (a <= 0.02) continue;
+    const size = p.sz * sc * (MOBILE ? 8 : 9.5) * (0.7 + depth * .6);
+    ctxHeart.globalAlpha = Math.min(a, 1);
+    ctxHeart.drawImage(p.spr, sx - size/2, sy - size/2, size, size);
+  }
+
+  /* --- 金色心电图线：绕心脏循环穿梭 --- */
+  ecgPhase += dt * 0.00042;
+  const R = 17.4 * U, AMP = 4.6 * U, SEG = MOBILE ? 150 : 230;
+  let prev = null;
+  ctxHeart.lineCap = 'round';
+  for (let i = 0; i <= SEG; i++){
+    const u = i / SEG;
+    const wave = ecg(u * 2 - ecgPhase * 2);
+    const phi = u * Math.PI * 2;
+    let X = R * Math.cos(phi), Z = R * Math.sin(phi) * 0.78;
+    const X2 = X * cosY - Z * sinY, Z2 = X * sinY + Z * cosY;
+    const Y = wave * AMP + 0.6 * U;
+    const Y2 = Y * tiltC - Z2 * tiltS, Z3 = Y * tiltS + Z2 * tiltC;
+    const sc = FOV / (FOV + Z3 + 260);
+    const sx = hCX + X2 * sc, sy = hCY - Y2 * sc;
+    const depth = (Z3 + 300) / 600;
+    const hot = Math.min(1, Math.abs(wave) * 1.5);
+    if (prev){
+      ctxHeart.globalAlpha = (0.16 + 0.62 * depth) * (0.45 + hot * .8) * glowK;
+      ctxHeart.lineWidth = (1.1 + hot * 2.3) * (0.55 + depth);
+      ctxHeart.strokeStyle = hot > .35 ? 'rgba(255,255,225,.98)' : 'rgba(255,199,96,.95)';
+      ctxHeart.beginPath(); ctxHeart.moveTo(prev.x, prev.y); ctxHeart.lineTo(sx, sy); ctxHeart.stroke();
+      if (hot > .55 && depth > .42){
+        const g = 30 * depth * (0.6 + hot);
+        ctxHeart.globalAlpha = 0.55 * depth * glowK;
+        ctxHeart.drawImage(SPR.gold, sx - g/2, sy - g/2, g, g);
+      }
+    }
+    prev = { x: sx, y: sy };
+  }
+
+  /* 中心光晕托字 */
+  const core = (MOBILE ? 250 : 360) * (0.9 + env * 0.22);
+  ctxHeart.globalAlpha = 0.30 + env * 0.30;
+  ctxHeart.drawImage(SPR.pink, hCX - core/2, hCY - core/2, core, core);
+  ctxHeart.globalAlpha = 0.16 + env * 0.18;
+  ctxHeart.drawImage(SPR.gold, hCX - core*.36, hCY - core*.36, core*.72, core*.72);
+
+  ctxHeart.globalAlpha = 1;
+  ctxHeart.globalCompositeOperation = 'source-over';
+}
+
+/* =========================================================
+   3) 特效层：烟花 / 纸屑 / 粉色流星雨 / 光环
+   ========================================================= */
+const parts = [];
+const rings = [];
+const MAXP = MOBILE ? 1400 : 3200;
+
+function push(p){ if (parts.length < MAXP) parts.push(p); }
+
+function firework(x, y, opt){
+  opt = opt || {};
+  const n = opt.n || (MOBILE ? 46 : 72);
+  const hueBase = opt.hue !== undefined ? opt.hue : Math.random() * 360;
+  const spread = opt.spread || 1;
+  for (let i = 0; i < n; i++){
+    const a = (i / n) * 6.283 + Math.random() * .22;
+    const v = (Math.random() * 4.4 + 2.0) * spread;
+    push({
+      t:'spark', x:x, y:y, px:x, py:y,
+      vx: Math.cos(a) * v, vy: Math.sin(a) * v - .6,
+      g: .052, drag: .977, life: 1, dec: Math.random() * .012 + .0085,
+      hue: opt.rainbow ? Math.random()*360 : hueBase + (Math.random()-.5)*46,
+      w: Math.random() * 1.9 + .9
+    });
+  }
+  rings.push({ x:x, y:y, r: 2, mr: 70 + Math.random()*50, a: .75, hue: hueBase });
+}
+function confettiBurst(){
+  const n = MOBILE ? 130 : 240;
+  for (let i = 0; i < n; i++){
+    push({
+      t:'conf', x: Math.random()*W, y: -Math.random()*H*.6 - 20,
+      vx: (Math.random()-.5) * 2.4, vy: Math.random()*2.2 + 1.6,
+      w: Math.random()*7 + 4, h: Math.random()*11 + 5,
+      rot: Math.random()*6.283, rs: (Math.random()-.5)*.28,
+      sway: Math.random()*6.283, ss: Math.random()*.06 + .02,
+      hue: Math.random()*360, life: 1, dec: .0028
+    });
+  }
+  for (let i = 0; i < 5; i++){
+    setTimeout(() => firework(W*(0.15 + Math.random()*0.7), H*(0.2 + Math.random()*0.35), { rainbow:true, n: MOBILE?40:66 }), i * 190);
+  }
+}
+function pinkRain(){
+  const n = MOBILE ? 90 : 170;
+  for (let i = 0; i < n; i++){
+    setTimeout(() => {
+      push({
+        t:'rain', x: Math.random()*W*1.3 - W*.15, y: -20 - Math.random()*220,
+        vx: -(Math.random()*1.6 + 1.4), vy: Math.random()*5.5 + 5.5,
+        life: 1, dec: .0075, w: Math.random()*1.7 + .9,
+        hue: 320 + Math.random()*35
+      });
+    }, Math.random() * 900);
+  }
+}
+function drawFx(dt){
+  ctxFx.clearRect(0,0,W,H);
+
+  /* 冲击光环 */
+  ctxFx.globalCompositeOperation = 'lighter';
+  for (let i = rings.length - 1; i >= 0; i--){
+    const r = rings[i];
+    r.r += (r.mr - r.r) * .13; r.a *= .90;
+    ctxFx.strokeStyle = 'hsla(' + r.hue + ',100%,75%,' + r.a + ')';
+    ctxFx.lineWidth = 2.2;
+    ctxFx.beginPath(); ctxFx.arc(r.x, r.y, r.r, 0, 6.283); ctxFx.stroke();
+    if (r.a < .02) rings.splice(i,1);
+  }
+
+  for (let i = parts.length - 1; i >= 0; i--){
+    const p = parts[i];
+
+    if (p.t === 'spark'){
+      p.px = p.x; p.py = p.y;
+      p.vx *= p.drag; p.vy = p.vy * p.drag + p.g;
+      p.x += p.vx; p.y += p.vy; p.life -= p.dec;
+      const l = Math.max(p.life, 0);
+      ctxFx.strokeStyle = 'hsla(' + p.hue + ',100%,' + (60 + l*32) + '%,' + l + ')';
+      ctxFx.lineWidth = p.w * l;
+      ctxFx.beginPath(); ctxFx.moveTo(p.px, p.py); ctxFx.lineTo(p.x, p.y); ctxFx.stroke();
+      if (l > .55){
+        const g = 13 * l;
+        ctxFx.globalAlpha = (l - .55) * 1.4;
+        ctxFx.drawImage(SPR.white, p.x - g/2, p.y - g/2, g, g);
+        ctxFx.globalAlpha = 1;
+      }
+      if (p.life <= 0 || p.y > H + 60) parts.splice(i,1);
+
+    } else if (p.t === 'rain'){
+      p.px = p.x; p.py = p.y;
+      p.x += p.vx; p.y += p.vy; p.life -= p.dec;
+      const l = Math.max(p.life, 0);
+      const g = ctxFx.createLinearGradient(p.x, p.y, p.x - p.vx*4.5, p.y - p.vy*4.5);
+      g.addColorStop(0, 'hsla(' + p.hue + ',100%,88%,' + l + ')');
+      g.addColorStop(1, 'hsla(' + p.hue + ',100%,70%,0)');
+      ctxFx.strokeStyle = g; ctxFx.lineWidth = p.w;
+      ctxFx.beginPath(); ctxFx.moveTo(p.x, p.y); ctxFx.lineTo(p.x - p.vx*4.5, p.y - p.vy*4.5); ctxFx.stroke();
+      if (p.y > H + 30 || p.life <= 0){
+        if (p.y > H - 4 && Math.random() < .35) firework(p.x, H - 6, { hue: 330, n: 14, spread: .55 });
+        parts.splice(i,1);
+      }
+    }
+  }
+
+  /* 纸屑用正常混合 */
+  ctxFx.globalCompositeOperation = 'source-over';
+  for (let i = parts.length - 1; i >= 0; i--){
+    const p = parts[i];
+    if (p.t !== 'conf') continue;
+    p.sway += p.ss;
+    p.x += p.vx + Math.sin(p.sway) * 1.5;
+    p.y += p.vy; p.rot += p.rs;
+    if (p.y > H * .55) p.life -= p.dec * 2.2;
+    const l = Math.max(p.life, 0);
+    ctxFx.save();
+    ctxFx.translate(p.x, p.y); ctxFx.rotate(p.rot);
+    ctxFx.globalAlpha = l;
+    ctxFx.fillStyle = 'hsl(' + p.hue + ',95%,66%)';
+    ctxFx.fillRect(-p.w/2, -p.h/2, p.w, p.h * (0.4 + Math.abs(Math.sin(p.sway))*0.6));
+    ctxFx.restore();
+    if (p.y > H + 40 || p.life <= 0) parts.splice(i,1);
+  }
+  ctxFx.globalAlpha = 1;
+}
+
+/* =========================================================
+   4) 主循环
+   ========================================================= */
+let last = performance.now();
+function loop(now){
+  const dt = Math.min(now - last, 50); last = now;
+  const t = now / 1000;
+  drawBg(t);
+  drawHeart(t, dt);
+  drawFx(dt);
+  requestAnimationFrame(loop);
+}
+resize();
+requestAnimationFrame(loop);
+
+/* =========================================================
+   5) Web Audio —— 心跳音 + 浪漫 BGM（纯代码合成）
+   ========================================================= */
+let AC = null, master = null, musicGain = null, sfxGain = null, convolver = null;
+function audio(){
+  if (AC) { if (AC.state === 'suspended') AC.resume(); return AC; }
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  AC = new Ctx();
+  master = AC.createGain(); master.gain.value = 0.9; master.connect(AC.destination);
+
+  // 简易混响（代码生成脉冲响应）
+  convolver = AC.createConvolver();
+  const len = AC.sampleRate * 2.6;
+  const buf = AC.createBuffer(2, len, AC.sampleRate);
+  for (let ch = 0; ch < 2; ch++){
+    const d = buf.getChannelData(ch);
+    for (let i = 0; i < len; i++) d[i] = (Math.random()*2 - 1) * Math.pow(1 - i/len, 2.6);
+  }
+  convolver.buffer = buf;
+  const wet = AC.createGain(); wet.gain.value = 0.28;
+  convolver.connect(wet); wet.connect(master);
+
+  musicGain = AC.createGain(); musicGain.gain.value = 0.0;
+  musicGain.connect(master); musicGain.connect(convolver);
+  sfxGain = AC.createGain(); sfxGain.gain.value = 0.9;
+  sfxGain.connect(master); sfxGain.connect(convolver);
+  return AC;
+}
+
+/* --- 高拟真「咚咚」心跳 --- */
+function heartbeat(){
+  const ac = audio(); const T = ac.currentTime;
+  const thump = (at, f0, f1, gain, dur) => {
+    const o = ac.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(f0, at);
+    o.frequency.exponentialRampToValueAtTime(f1, at + dur * .85);
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(gain, at + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    // 一点点「肉感」噪声，模拟瓣膜声
+    const nb = ac.createBuffer(1, ac.sampleRate * dur, ac.sampleRate);
+    const nd = nb.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = (Math.random()*2-1) * Math.pow(1 - i/nd.length, 5);
+    const ns = ac.createBufferSource(); ns.buffer = nb;
+    const nf = ac.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 190;
+    const ng = ac.createGain(); ng.gain.value = gain * 0.35;
+    ns.connect(nf); nf.connect(ng); ng.connect(sfxGain);
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 320;
+    o.connect(g); g.connect(lp); lp.connect(sfxGain);
+    o.start(at); o.stop(at + dur + .05); ns.start(at); ns.stop(at + dur);
+  };
+  thump(T,        88, 34, 0.95, 0.30);   // lub
+  thump(T + 0.26, 72, 30, 0.62, 0.24);   // dub
+}
+
+/* --- 轻柔提示音 --- */
+function blip(freq, dur, type, vol){
+  const ac = audio(); const T = ac.currentTime;
+  const o = ac.createOscillator(); o.type = type || 'sine'; o.frequency.value = freq;
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, T);
+  g.gain.exponentialRampToValueAtTime(vol || .18, T + .015);
+  g.gain.exponentialRampToValueAtTime(0.0001, T + (dur || .35));
+  o.connect(g); g.connect(sfxGain); o.start(T); o.stop(T + (dur || .35) + .05);
+}
+function sparkleUp(){
+  const s = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+  s.forEach((f, i) => setTimeout(() => blip(f, .5, 'triangle', .12), i * 62));
+}
+function whoosh(){
+  const ac = audio(); const T = ac.currentTime;
+  const len = ac.sampleRate * .8;
+  const b = ac.createBuffer(1, len, ac.sampleRate);
+  const d = b.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 1.6);
+  const s = ac.createBufferSource(); s.buffer = b;
+  const f = ac.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.4;
+  f.frequency.setValueAtTime(320, T); f.frequency.exponentialRampToValueAtTime(3600, T + .55);
+  const g = ac.createGain(); g.gain.setValueAtTime(.35, T); g.gain.exponentialRampToValueAtTime(.0001, T + .8);
+  s.connect(f); f.connect(g); g.connect(sfxGain); s.start(T); s.stop(T + .8);
+}
+
+/* --- 浪漫 BGM：卡农式和声 + 音乐盒旋律 --- */
+const N = { C3:130.81,D3:146.83,E3:164.81,F3:174.61,G3:196.00,A3:220.00,B3:246.94,
+            C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392.00,A4:440.00,B4:493.88,
+            C5:523.25,D5:587.33,E5:659.25,F5:698.46,G5:783.99,A5:880.00,B5:987.77,C6:1046.5 };
+const CHORDS = [
+  ['C3','G3','E4'], ['G3','D4','B3'], ['A3','E4','C4'], ['E3','B3','G3'],
+  ['F3','C4','A3'], ['C3','G3','E4'], ['F3','A3','C4'], ['G3','B3','D4']
+];
+const MELODY = [
+  ['E5','G5','C6','G5'], ['D5','G5','B5','G5'], ['C5','E5','A5','E5'], ['B4','E5','G5','E5'],
+  ['A4','C5','F5','C5'], ['G4','C5','E5','C5'], ['A4','C5','F5','A5'], ['B4','D5','G5','D5']
+];
+let musicOn = false, barIdx = 0, schedTimer = null, nextTime = 0;
+const BPM = 74, BEAT = 60 / BPM, BAR = BEAT * 4;
+
+function voice(freq, at, dur, vol, type, det){
+  const o = AC.createOscillator(); o.type = type;
+  o.frequency.value = freq; if (det) o.detune.value = det;
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.exponentialRampToValueAtTime(vol, at + 0.03);
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+  const f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 2600;
+  o.connect(g); g.connect(f); f.connect(musicGain);
+  o.start(at); o.stop(at + dur + .06);
+}
+function scheduleBar(){
+  const ch = CHORDS[barIdx % CHORDS.length];
+  const me = MELODY[barIdx % MELODY.length];
+  const t0 = nextTime;
+  // 铺底 pad
+  ch.forEach((n, i) => {
+    voice(N[n], t0, BAR * 1.05, 0.052, 'sine');
+    voice(N[n] * 2, t0, BAR * 0.9, 0.018, 'triangle', 5);
+  });
+  // 低音
+  voice(N[ch[0]] / 2, t0, BEAT * 2.6, 0.075, 'sine');
+  // 音乐盒旋律（八分音符琶音）
+  for (let i = 0; i < 8; i++){
+    const n = me[i % me.length];
+    const at = t0 + i * (BEAT / 2);
+    const v = (i % 2 === 0 ? 0.075 : 0.045) * (0.8 + Math.random()*0.35);
+    voice(N[n], at, BEAT * 1.15, v, 'triangle');
+    voice(N[n] * 2, at, BEAT * 0.5, v * 0.22, 'sine');
+  }
+  nextTime += BAR;
+  barIdx++;
+}
+function musicStart(){
+  audio();
+  musicOn = true;
+  nextTime = AC.currentTime + 0.12;
+  musicGain.gain.cancelScheduledValues(AC.currentTime);
+  musicGain.gain.setValueAtTime(Math.max(musicGain.gain.value, 0.0001), AC.currentTime);
+  musicGain.gain.linearRampToValueAtTime(0.85, AC.currentTime + 1.6);
+  if (schedTimer) clearInterval(schedTimer);
+  schedTimer = setInterval(() => {
+    if (!musicOn) return;
+    while (nextTime < AC.currentTime + 1.2) scheduleBar();
+  }, 220);
+  scheduleBar();
+}
+function musicStop(){
+  musicOn = false;
+  if (AC && musicGain){
+    musicGain.gain.cancelScheduledValues(AC.currentTime);
+    musicGain.gain.setValueAtTime(musicGain.gain.value, AC.currentTime);
+    musicGain.gain.linearRampToValueAtTime(0.0001, AC.currentTime + 0.7);
+  }
+  if (schedTimer) { clearInterval(schedTimer); schedTimer = null; }
+}
+const musicBtn = document.getElementById('musicBtn');
+const musicTxt = document.getElementById('musicTxt');
+musicBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  if (musicOn){ musicStop(); musicBtn.classList.remove('on'); musicTxt.textContent = '浪漫音乐'; }
+  else { musicStart(); musicBtn.classList.add('on'); musicTxt.textContent = '正在播放'; }
+});
+
+/* =========================================================
+   6) 交互：全屏划动烟花
+   ========================================================= */
+let lastFw = 0, lastX = 0, lastY = 0;
+function isUI(el){ return !!(el && el.closest && el.closest('.console,.card,.scroll-wrap,.music-btn,.thermo')); }
+
+function touchAt(x, y, strong){
+  const now = performance.now();
+  if (now - lastFw < (strong ? 0 : 55)) return;
+  lastFw = now;
+  firework(x, y, { n: strong ? (MOBILE?52:80) : (MOBILE?18:26), spread: strong ? 1 : .62, rainbow: strong });
+  if (strong) blip(700 + Math.random()*500, .28, 'triangle', .10);
+}
+function onDown(e){
+  audio();
+  const p = e.touches ? e.touches[0] : e;
+  if (isUI(e.target)) return;
+  touchAt(p.clientX, p.clientY, true);
+  lastX = p.clientX; lastY = p.clientY;
+  dragging = true;
+}
+let dragging = false;
+function onMove(e){
+  if (!dragging) return;
+  const p = e.touches ? e.touches[0] : e;
+  if (isUI(e.target)) return;
+  const d = Math.hypot(p.clientX - lastX, p.clientY - lastY);
+  if (d > 26){ touchAt(p.clientX, p.clientY, false); lastX = p.clientX; lastY = p.clientY; }
+  if (e.cancelable) e.preventDefault();
+}
+function onUp(){ dragging = false; }
+addEventListener('mousedown', onDown);
+addEventListener('mousemove', onMove);
+addEventListener('mouseup', onUp);
+addEventListener('touchstart', onDown, { passive:true });
+addEventListener('touchmove', onMove, { passive:false });
+addEventListener('touchend', onUp);
+
+/* =========================================================
+   7) 六大魔药
+   ========================================================= */
+const LOVE_LINES = [
+  '阳阳，我知道你今天又站了一整天，护士鞋底磨得发烫，连喝口水都要挤在两次呼叫铃之间。你把最好的温柔都给了病人，把“我没事”留给了自己。可是在我这里，你不用当那个万能的吕护士——你只是我的阳阳，是那个可以撒娇、可以喊累、可以什么都不做只窝在我怀里的小姑娘。往后每一个下班的门口，我都会在；你只管把白大褂脱下来，剩下的疲惫，交给我来收。',
+  '阳阳，你输液时手那么稳，扎针那么轻，把一整个病区的人心都安顿好了；可你自己的心事，总是没人替你收拾。我心疼你三班倒的生物钟，心疼你把饭吃成冷的，心疼你被无理取闹的时候还要笑着说“没关系”。我不敢说能替你分担多少，但我可以保证：无论几点下班，家里都有一盏灯为你留着，有一碗热的东西等着你，有一个人永远站在你这一边。',
+  '阳阳，别人只看见护士的白衣天使四个字，我却看见了那双被消毒液泡到发白的手，看见了口罩勒出的红印，看见了你交完班还要写完的护理记录。你救了那么多人，就让我来救你一次好不好？从今往后，累了就往后倒，我在。你不用永远坚强，因为爱你的人，天生就是用来做你的后盾的。',
+  '阳阳，昨晚你值夜班，凌晨三点的走廊只有你的脚步声和监护仪的滴答。那个时候我在梦里也想着你，想你有没有偷偷打哈欠，有没有冷。真希望我能变成你口袋里的暖宝宝，变成你椅子上的靠垫，变成你抬头就能看见的那句“我在等你回家”。你照顾着全世界，而我，只想踏踏实实地照顾你一个人。',
+  '阳阳，我常想，你每天面对那么多生老病死，一定比谁都懂生命有多短。所以我更不想浪费一秒钟去让你等、去让你猜、去让你不确定我的心意。我爱你，从你姓吕的这个字开始，到你笑起来眼睛弯弯的样子，到你说“我今天又救回来一个”时眼里的光。以后的日子，你继续做你了不起的小护士，我来做你最忠实的病人——终身随诊，永不出院。'
+];
+
+const card = document.getElementById('card');
+const cardText = document.getElementById('cardText');
+const cardTitle = document.getElementById('cardTitle');
+document.getElementById('cardClose').addEventListener('click', () => card.classList.remove('show'));
+
+let lineOrder = [], linePtr = 0;
+function nextLine(){
+  if (linePtr >= lineOrder.length){
+    lineOrder = LOVE_LINES.map((v,i) => i);
+    for (let i = lineOrder.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i+1));
+      const tmp = lineOrder[i]; lineOrder[i] = lineOrder[j]; lineOrder[j] = tmp;
+    }
+    linePtr = 0;
+  }
+  return LOVE_LINES[lineOrder[linePtr++]];
+}
+
+const subtitle = document.getElementById('subtitle');
+let subTimer = null;
+function showSub(text, ms){
+  subtitle.textContent = text;
+  subtitle.classList.add('show');
+  clearTimeout(subTimer);
+  subTimer = setTimeout(() => subtitle.classList.remove('show'), ms || 3200);
+}
+
+const scrollWrap = document.getElementById('scrollWrap');
+document.getElementById('rxClose').addEventListener('click', e => { e.stopPropagation(); scrollWrap.classList.remove('show'); });
+
+const thermo = document.getElementById('thermo');
+const merc = document.getElementById('merc');
+const tempNum = document.getElementById('tempNum');
+const warmlight = document.getElementById('warmlight');
+const bandaid = document.getElementById('bandaid');
+
+/* 听诊器：点击 / 长按 */
+let hbTimer = null;
+function startHeartbeat(){
+  heartbeat();
+  showSub('阳阳，这是我面对你时的心跳频率。', 4200);
+  clearInterval(hbTimer);
+  let n = 0;
+  hbTimer = setInterval(() => { heartbeat(); if (++n > 9) { clearInterval(hbTimer); hbTimer = null; } }, 820);
+}
+function stopHeartbeat(){ if (hbTimer){ clearInterval(hbTimer); hbTimer = null; } }
+
+const ACTIONS = {
+  capsule(){
+    confettiBurst(); sparkleUp();
+    cardTitle.textContent = '元 气 胶 囊 · 已 服 用';
+    cardText.textContent = nextLine();
+    card.classList.add('show');
+    scrollWrap.classList.remove('show');
+  },
+  steth(){ startHeartbeat(); },
+  syringe(el){
+    el.classList.add('shoot');
+    setTimeout(() => el.classList.remove('shoot'), 520);
+    whoosh();
+    setTimeout(pinkRain, 260);
+    showSub('注射完成 —— 成分：100% 对阳阳的喜欢 ♡', 3400);
+  },
+  rx(){
+    card.classList.remove('show');
+    scrollWrap.classList.add('show');
+    blip(392, .5, 'triangle', .12);
+    setTimeout(() => blip(523.25, .6, 'triangle', .10), 130);
+  },
+  thermo(){
+    thermo.classList.add('show');
+    merc.style.height = '6%';
+    tempNum.textContent = '36.5℃';
+    warmlight.classList.remove('on'); void warmlight.offsetWidth;
+    setTimeout(() => { merc.style.height = '97%'; }, 60);
+    let v = 36.5;
+    const iv = setInterval(() => {
+      v += (520 - v) * 0.13 + 2;
+      if (v >= 519.4){ v = 520; clearInterval(iv); tempNum.textContent = '520℃';
+        warmlight.classList.add('on'); sparkleUp();
+        showSub('警告：体温异常 —— 因为太爱阳阳了 ♡', 4000);
+        for (let i = 0; i < 4; i++) setTimeout(() => firework(W*(.2+Math.random()*.6), H*(.25+Math.random()*.3), { hue: 335 }), i*220);
+        setTimeout(() => thermo.classList.remove('show'), 4600);
+      } else tempNum.textContent = v.toFixed(1) + '℃';
+    }, 32);
+    blip(660, .25, 'sine', .1);
+  },
+  band(){
+    bandaid.classList.remove('play'); void bandaid.offsetWidth;
+    bandaid.classList.add('play');
+    blip(330, .3, 'sine', .12);
+    setTimeout(() => showSub('愿能治愈阳阳值班的所有疲惫。', 4200), 700);
+    setTimeout(() => { for (let i = 0; i < 3; i++) setTimeout(() => firework(W*(.3+Math.random()*.4), H*(.35+Math.random()*.2), { hue: 20 }), i*260); }, 900);
+  }
+};
+
+document.querySelectorAll('.pill').forEach(el => {
+  const act = el.dataset.act;
+  const fire = e => {
+    e.stopPropagation(); e.preventDefault();
+    audio();
+    el.classList.remove('fire'); void el.offsetWidth; el.classList.add('fire');
+    const r = el.getBoundingClientRect();
+    firework(r.left + r.width/2, r.top + r.height/2, { n: MOBILE?26:40, spread:.7, rainbow:true });
+    ACTIONS[act](el);
+  };
+  el.addEventListener('click', fire);
+  // 听诊器长按
+  if (act === 'steth'){
+    el.addEventListener('mouseleave', stopHeartbeat);
+    el.addEventListener('touchend', stopHeartbeat);
+  }
+});
+
+/* 点击卡片外关闭 */
+addEventListener('click', e => {
+  if (!isUI(e.target)){
+    card.classList.remove('show');
+    scrollWrap.classList.remove('show');
+  }
+});
+
+/* 开场 */
+setTimeout(() => {
+  firework(W/2, H*0.42, { rainbow:true, n: MOBILE?60:96 });
+  setTimeout(() => firework(W*0.28, H*0.32, { hue:330 }), 320);
+  setTimeout(() => firework(W*0.72, H*0.30, { hue:45 }), 620);
+}, 900);
+setTimeout(() => { const h = document.getElementById('hint'); if (h) h.remove(); }, 6200);
+
+/* 首次任意交互解锁音频 */
+const unlock = () => { audio(); removeEventListener('pointerdown', unlock); removeEventListener('touchstart', unlock); };
+addEventListener('pointerdown', unlock);
+addEventListener('touchstart', unlock);
+
+/* 页面隐藏时省电 */
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && AC) AC.suspend();
+  else if (AC) AC.resume();
+});
+</script>
+</body>
+</html>
