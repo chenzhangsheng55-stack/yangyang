@@ -1,6 +1,7 @@
 # 只发布网页本体与其依赖，其余本地文件一律不上传到 GitHub
 /*
 !.gitignore
+!.nojekyll
 !index.html
 !three.min.js
 !vendor/
