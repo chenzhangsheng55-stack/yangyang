@@ -25,7 +25,10 @@ body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans S
   linear-gradient(170deg,#1a0630,#2a0a3d 28%,#3d0f42 52%,#25082f 78%,#0d0318)}
 #s2 .veil{background:radial-gradient(90% 70% at 78% 12%,rgba(255,246,214,.85),transparent 60%),
   linear-gradient(175deg,#ffd9b8,#ffc0cf 38%,#f8a8c4 62%,#d98bb4 82%,#a86a9c)}
-#s3 .veil{background:linear-gradient(180deg,#020a1c,#04142e 30%,#062044 52%,#04142c 74%,#01060f)}
+#s3 .veil{background:
+  radial-gradient(80% 50% at 22% 78%,rgba(255,150,70,.16),transparent 62%),
+  radial-gradient(70% 45% at 80% 68%,rgba(90,200,255,.14),transparent 60%),
+  linear-gradient(180deg,#03081a,#061024 34%,#08182e 58%,#050d1c 80%,#01050e)}
 #s4 .veil{background:radial-gradient(90% 60% at 50% 100%,rgba(120,80,255,.30),transparent 62%),
   linear-gradient(175deg,#0d0426,#160a38 42%,#0a0320 78%,#04010f)}
 #s5 .veil{background:#02010a}
@@ -143,6 +146,17 @@ body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans S
 .ov-hint{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);transform:translateX(-50%);
   z-index:4;font-size:11px;letter-spacing:.24em;color:rgba(255,255,255,.55);white-space:nowrap;pointer-events:none}
 #monOv{background:#01100c}
+
+/* ---- 雾窗写字 ---- */
+#fogOv{background:#040910}
+.fog-tip{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 13%);transform:translateX(-50%);
+  z-index:4;width:min(560px,86vw);text-align:center;pointer-events:none;
+  font-size:clamp(12px,3.2vw,15px);line-height:2;letter-spacing:.12em;color:rgba(214,232,255,.62);
+  text-shadow:0 0 14px rgba(0,0,0,.8);transition:opacity 1.2s}
+.fog-done{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 26px);transform:translateX(-50%);
+  z-index:4;font-size:12px;letter-spacing:.26em;color:rgba(255,224,178,.9);opacity:0;transition:opacity 1.4s;
+  pointer-events:none;text-shadow:0 0 16px rgba(255,180,90,.8)}
+.fog-done.on{opacity:1}
 
 /* ---- 星河玫瑰 ---- */
 #roseOv{background:#03040f}
@@ -319,8 +333,8 @@ body.rose .topbar,body.rose .dots{opacity:0;pointer-events:none}
   <!-- ===== S3 极光雪夜 ===== -->
   <section class="scene" id="s3">
     <div class="veil"></div>
-    <canvas class="bgc" id="cvAurora"></canvas>
-    <div class="sc-head"><h2>极 夜 · 值 班 室</h2><p>A U R O R A　N I G H T</p></div>
+    <canvas class="bgc" id="cvRain"></canvas>
+    <div class="sc-head"><h2>雨 夜 · 值 班 室</h2><p>N I G H T　S H I F T</p></div>
     <div class="tools">
       <div class="tool" data-act="monitor">
         <svg viewBox="0 0 48 48" fill="none">
@@ -337,6 +351,14 @@ body.rose .topbar,body.rose .dots{opacity:0;pointer-events:none}
           <path d="M33 24h5M38 24h6" stroke="#ffd88a"/><circle cx="44" cy="24" r="1.6" fill="#ff5c9d" stroke="none"/>
         </svg><span>蓄力注射</span>
         <div class="charge" id="synCharge"></div>
+      </div>
+      <div class="tool" data-act="fog">
+        <svg viewBox="0 0 48 48" fill="none">
+          <rect x="8" y="7" width="32" height="34" rx="3" fill="rgba(150,210,255,.22)" stroke="#bfefff" stroke-width="2.2"/>
+          <path d="M24 7v34M8 24h32" stroke="#bfefff" stroke-width="1.6" stroke-opacity=".55"/>
+          <path d="M13 33c3-4 6-1 9-5" stroke="#ffd88a" stroke-width="2.4" stroke-linecap="round"/>
+          <circle cx="31" cy="16" r="2" fill="#ffd88a"/><circle cx="35" cy="30" r="1.5" fill="#bfefff"/>
+        </svg><span>雾窗写字</span>
       </div>
       <div class="tool" data-act="night">
         <svg viewBox="0 0 48 48" fill="none">
@@ -413,6 +435,13 @@ body.rose .topbar,body.rose .dots{opacity:0;pointer-events:none}
   <canvas id="roseCv"></canvas>
   <div class="rose-title" id="roseTitle">吕护士，今天辛苦啦。<br>把你的指尖借给我，在属于你的星河里种下玫瑰吧...</div>
   <div class="rose-count" id="roseCount">已 种 下 0 朵</div>
+  <div class="ov-close" data-ovclose>✕</div>
+</div>
+
+<div class="overlay" id="fogOv">
+  <canvas id="fogCv"></canvas>
+  <div class="fog-tip" id="fogTip">窗 上 全 是 雾 气 · 用 手 指 擦 一 擦</div>
+  <div class="fog-done" id="fogDone">擦 干 净 了 · 外 面 的 灯 一 直 亮 着</div>
   <div class="ov-close" data-ovclose>✕</div>
 </div>
 
@@ -515,8 +544,8 @@ function mkLayer(id){
   }};
 }
 const L={stars:mkLayer('cvStars'),heart:mkLayer('cvHeart'),sakura:mkLayer('cvSakura'),
-  aurora:mkLayer('cvAurora'),stBg:mkLayer('cvStBg'),fx:mkLayer('fx'),
-  rose:mkLayer('roseCv'),mon:mkLayer('monCv'),st:mkLayer('stCv')};
+  rain:mkLayer('cvRain'),stBg:mkLayer('cvStBg'),fx:mkLayer('fx'),
+  rose:mkLayer('roseCv'),mon:mkLayer('monCv'),st:mkLayer('stCv'),fog:mkLayer('fogCv')};
 
 /* =========================================================
    S1 星空 + 3D 粒子爱心（原版）
@@ -688,62 +717,122 @@ function drawSakura(){
 }
 
 /* =========================================================
-   S3 极光雪夜
+   S3 雨夜霓虹窗
    ========================================================= */
-let auroraBands=[],snow=[],skyStars=[],auroraT=0;
-function buildAurora(){
-  const {w,h}=L.aurora;
-  auroraBands=[]; snow=[]; skyStars=[];
-  const cols=[[110,255,190],[90,220,255],[180,130,255],[120,255,220]];
-  for (let i=0;i<4;i++) auroraBands.push({base:h*(.22+i*.075),amp:h*(.05+Math.random()*.05),col:cols[i%cols.length],
-    sp:.12+Math.random()*.16,ph:Math.random()*6.283,k1:1.1+Math.random()*1.4,k2:2.4+Math.random()*2,
-    thick:h*(.10+Math.random()*.09),a:.16+Math.random()*.12});
-  for (let i=0;i<(MOBILE?70:130);i++) snow.push({x:Math.random()*w,y:Math.random()*h,r:Math.random()*1.9+.5,
-    vy:Math.random()*.55+.22,sway:Math.random()*6.283,swaySp:Math.random()*.02+.006,a:Math.random()*.6+.3});
-  for (let i=0;i<(MOBILE?60:110);i++) skyStars.push({x:Math.random()*w,y:Math.random()*h*.7,
-    r:Math.random()*1.1+.25,a:Math.random(),sp:Math.random()*.02+.004});
+const BOKEH_COLS=[[255,170,90],[255,120,70],[120,210,255],[255,220,150],[200,140,255],[120,255,210]];
+function makeBokeh(col,size){
+  const c=document.createElement('canvas'); c.width=c.height=size;
+  const x=c.getContext('2d');
+  const g=x.createRadialGradient(size/2,size/2,0,size/2,size/2,size/2);
+  g.addColorStop(0,'rgba('+col[0]+','+col[1]+','+col[2]+',.55)');
+  g.addColorStop(.55,'rgba('+col[0]+','+col[1]+','+col[2]+',.24)');
+  g.addColorStop(.82,'rgba('+col[0]+','+col[1]+','+col[2]+',.07)');
+  g.addColorStop(1,'rgba('+col[0]+','+col[1]+','+col[2]+',0)');
+  x.fillStyle=g; x.beginPath(); x.arc(size/2,size/2,size/2,0,6.283); x.fill();
+  return c;
 }
-function drawAurora(){
-  const {x:ctx,w,h}=L.aurora;
-  ctx.clearRect(0,0,w,h); auroraT+=.006;
-  for (const s of skyStars){
-    s.a+=s.sp;
-    ctx.globalAlpha=.35+.5*Math.abs(Math.sin(s.a));
-    ctx.fillStyle='#dff2ff';
-    ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,6.283); ctx.fill();
-  }
-  ctx.globalAlpha=1; ctx.globalCompositeOperation='lighter';
-  for (const b of auroraBands){
-    const steps=MOBILE?26:44;
-    for (let i=0;i<steps;i++){
-      const u=i/steps,x=u*w;
-      const y=b.base+Math.sin(u*b.k1*6.283+auroraT*b.sp*10+b.ph)*b.amp
-                   +Math.sin(u*b.k2*6.283-auroraT*b.sp*6)*b.amp*.45;
-      const g=ctx.createLinearGradient(0,y-b.thick*.5,0,y+b.thick);
-      const c=b.col;
-      g.addColorStop(0,'rgba('+c[0]+','+c[1]+','+c[2]+',0)');
-      g.addColorStop(.35,'rgba('+c[0]+','+c[1]+','+c[2]+','+(b.a*(.7+.3*Math.sin(u*9+auroraT*4)))+')');
-      g.addColorStop(1,'rgba('+c[0]+','+c[1]+','+c[2]+',0)');
-      ctx.fillStyle=g; ctx.fillRect(x,y-b.thick*.5,w/steps+2,b.thick*1.5);
-    }
-  }
-  ctx.globalCompositeOperation='source-over';
-  ctx.fillStyle='rgba(4,10,24,.92)';
-  ctx.beginPath(); ctx.moveTo(0,h);
-  ctx.lineTo(0,h*.80); ctx.lineTo(w*.16,h*.66); ctx.lineTo(w*.30,h*.79);
-  ctx.lineTo(w*.44,h*.62); ctx.lineTo(w*.58,h*.78); ctx.lineTo(w*.72,h*.60);
-  ctx.lineTo(w*.86,h*.76); ctx.lineTo(w,h*.68); ctx.lineTo(w,h);
-  ctx.closePath(); ctx.fill();
-  ctx.fillStyle='rgba(180,215,255,.20)';
-  ctx.beginPath(); ctx.moveTo(w*.44,h*.62); ctx.lineTo(w*.50,h*.70); ctx.lineTo(w*.38,h*.70); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(w*.72,h*.60); ctx.lineTo(w*.79,h*.69); ctx.lineTo(w*.66,h*.69); ctx.closePath(); ctx.fill();
-  for (const s of snow){
-    s.y+=s.vy; s.sway+=s.swaySp;
-    if (s.y>h+4){ s.y=-4; s.x=Math.random()*w; }
-    ctx.globalAlpha=s.a; ctx.fillStyle='#fff';
-    ctx.beginPath(); ctx.arc(s.x+Math.sin(s.sway)*16,s.y,s.r,0,6.283); ctx.fill();
+const BOKEH_SPR=BOKEH_COLS.map(c=>makeBokeh(c,128));
+let bokehs=[],glassDots=[],runDrops=[],rainT=0,lightning=0,lightNext=6;
+function buildRain(){
+  const {w,h}=L.rain;
+  bokehs=[]; glassDots=[]; runDrops=[];
+  for (let i=0;i<(MOBILE?26:42);i++) bokehs.push({
+    x:Math.random()*w, y:h*(.30+Math.random()*.62), r:Math.min(w,h)*(.030+Math.random()*.075),
+    spr:BOKEH_SPR[Math.floor(Math.random()*BOKEH_SPR.length)],
+    a:.35+Math.random()*.5, ph:Math.random()*6.283, sp:.004+Math.random()*.007,
+    vx:(Math.random()-.5)*.05, vy:-(Math.random()*.035+.008)});
+  for (let i=0;i<(MOBILE?90:170);i++) glassDots.push({
+    x:Math.random()*w, y:Math.random()*h, r:Math.random()*2.0+.7,
+    a:.18+Math.random()*.42, ph:Math.random()*6.283});
+  for (let i=0;i<(MOBILE?9:15);i++) runDrops.push(newRunDrop(w,h,true));
+}
+function newRunDrop(w,h,anywhere){
+  return {x:Math.random()*w, y:anywhere?Math.random()*h:-20,
+    r:2.6+Math.random()*3.4, vy:0, wob:(Math.random()-.5)*.22,
+    trail:[], hold:Math.random()*900};
+}
+/* 把雨夜霓虹景画到任意 ctx（值班室背景 & 雾窗底层共用） */
+function paintRainScene(ctx,w,h,t){
+  const bg=ctx.createLinearGradient(0,0,0,h);
+  bg.addColorStop(0,'#03081a'); bg.addColorStop(.42,'#07142a');
+  bg.addColorStop(.72,'#08182e'); bg.addColorStop(1,'#01050e');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
+  /* 远处霓虹光斑 */
+  ctx.globalCompositeOperation='lighter';
+  for (const b of bokehs){
+    b.ph+=b.sp; b.x+=b.vx; b.y+=b.vy;
+    if (b.y<h*.22){ b.y=h*.96; b.x=Math.random()*w; }
+    if (b.x<-b.r) b.x=w+b.r; if (b.x>w+b.r) b.x=-b.r;
+    const rr=b.r*(.9+.14*Math.sin(b.ph));
+    ctx.globalAlpha=b.a*(.62+.38*Math.sin(b.ph*1.3));
+    ctx.drawImage(b.spr,b.x-rr,b.y-rr,rr*2,rr*2);
   }
   ctx.globalAlpha=1;
+  /* 地平线一带的城市辉光 */
+  const hg=ctx.createLinearGradient(0,h*.62,0,h);
+  hg.addColorStop(0,'rgba(255,170,90,0)');
+  hg.addColorStop(.55,'rgba(255,150,80,.12)');
+  hg.addColorStop(1,'rgba(255,130,70,.05)');
+  ctx.fillStyle=hg; ctx.fillRect(0,h*.62,w,h*.38);
+  ctx.globalCompositeOperation='source-over';
+  /* 闪电 */
+  if (lightning>0){
+    ctx.fillStyle='rgba(190,220,255,'+(lightning*.16)+')';
+    ctx.fillRect(0,0,w,h);
+  }
+}
+/* 玻璃上的水珠层 */
+function paintGlass(ctx,w,h,dt){
+  /* 静止小水珠 */
+  for (const d of glassDots){
+    d.ph+=.02;
+    const tw=.55+.45*Math.sin(d.ph);
+    ctx.globalAlpha=d.a*tw;
+    ctx.fillStyle='rgba(200,228,255,.55)';
+    ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,6.283); ctx.fill();
+    ctx.globalAlpha=d.a*tw*.9;
+    ctx.fillStyle='rgba(255,255,255,.9)';
+    ctx.beginPath(); ctx.arc(d.x-d.r*.32,d.y-d.r*.34,d.r*.30,0,6.283); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  /* 流下来的大水珠 */
+  for (let i=0;i<runDrops.length;i++){
+    const d=runDrops[i];
+    if (d.hold>0){ d.hold-=dt; }
+    else {
+      d.vy=Math.min(d.vy+0.055,3.4+d.r*.28);
+      d.y+=d.vy; d.x+=d.wob*.6;
+      if (Math.random()<.20) d.trail.push({x:d.x,y:d.y,r:d.r*(.22+Math.random()*.30),a:.75});
+      if (d.trail.length>26) d.trail.shift();
+      if (d.y>h+20){ runDrops[i]=newRunDrop(w,h,false); continue; }
+    }
+    for (const s of d.trail){
+      s.a*=.985;
+      ctx.globalAlpha=s.a*.55;
+      ctx.fillStyle='rgba(190,224,255,.6)';
+      ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,6.283); ctx.fill();
+    }
+    ctx.globalAlpha=.85;
+    ctx.fillStyle='rgba(205,232,255,.62)';
+    ctx.beginPath(); ctx.ellipse(d.x,d.y,d.r*.86,d.r*1.16,0,0,6.283); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.92)';
+    ctx.beginPath(); ctx.arc(d.x-d.r*.3,d.y-d.r*.42,d.r*.28,0,6.283); ctx.fill();
+    ctx.globalAlpha=1;
+  }
+}
+function drawRain(dt){
+  const {x:ctx,w,h}=L.rain;
+  rainT+=dt/1000;
+  lightNext-=dt/1000;
+  if (lightNext<=0){ lightning=1; lightNext=7+Math.random()*11; }
+  lightning=Math.max(0,lightning-dt*.004);
+  ctx.clearRect(0,0,w,h);
+  paintRainScene(ctx,w,h,rainT);
+  paintGlass(ctx,w,h,dt);
+  /* 窗框暗角 */
+  const vg=ctx.createRadialGradient(w/2,h*.52,Math.min(w,h)*.28,w/2,h*.52,Math.max(w,h)*.78);
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.62)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,w,h);
 }
 
 /* =========================================================
@@ -1057,7 +1146,7 @@ scroller.addEventListener('scroll',updateActive,{passive:true});
 /* =========================================================
    覆盖层
    ========================================================= */
-const roseOv=document.getElementById('roseOv'),monOv=document.getElementById('monOv');
+const roseOv=document.getElementById('roseOv'),monOv=document.getElementById('monOv'),fogOv=document.getElementById('fogOv');
 let ovOpen=null;
 function openOv(el){ closeOv(); ovOpen=el; el.classList.add('show'); }
 function closeOv(){
@@ -1078,7 +1167,7 @@ const LETTER_L1='玫瑰开满星海，风里带回心动。';
 const LETTER_L2='阳阳，辛苦啦，爱你~';
 const LETTER_FONT='"Kaiti SC","STKaiti","KaiTi","楷体","Songti SC","STSong","SimSun",serif';
 let roseState='plant';
-let roses=[],ripples=[],blobs=[],rstars=[],fireflies=[],sparks=[];
+let roses=[],ripples=[],blobs=[],rstars=[],fireflies=[],sparks=[],dust=[],driftPetals=[];
 let roseCount=0,roseT=0,roseLastPlant=0,letterT=0;
 const ROSE_MAX=MOBILE?22:34,ROSE_TRIGGER=9;
 
@@ -1088,13 +1177,14 @@ function easeBack(t){
   const c=1.70158+1;
   return 1+ c*Math.pow(t-1,3) + 1.70158*Math.pow(t-1,2);
 }
-/* 预渲染一团光晕，避免每帧生成渐变 */
-function makeBlobSprite(col,size){
+/* 预渲染一条丝绸光帘（细长柔光），旋转+漂移即成流动星云 */
+function makeVeilSprite(col,size){
   const c=document.createElement('canvas'); c.width=c.height=size;
   const x=c.getContext('2d');
   const g=x.createRadialGradient(size/2,size/2,0,size/2,size/2,size/2);
-  g.addColorStop(0,'rgba('+col[0]+','+col[1]+','+col[2]+',.22)');
-  g.addColorStop(.42,'rgba('+col[0]+','+col[1]+','+col[2]+',.09)');
+  g.addColorStop(0,'rgba('+col[0]+','+col[1]+','+col[2]+',.30)');
+  g.addColorStop(.34,'rgba('+col[0]+','+col[1]+','+col[2]+',.15)');
+  g.addColorStop(.66,'rgba('+col[0]+','+col[1]+','+col[2]+',.05)');
   g.addColorStop(1,'rgba('+col[0]+','+col[1]+','+col[2]+',0)');
   x.fillStyle=g; x.fillRect(0,0,size,size);
   return c;
@@ -1102,48 +1192,71 @@ function makeBlobSprite(col,size){
 function roseInit(){
   L.rose.fit();
   const {w,h}=L.rose;
-  roseState='plant'; roses=[]; ripples=[]; fireflies=[]; sparks=[];
+  roseState='plant'; roses=[]; ripples=[]; fireflies=[]; sparks=[]; driftPetals=[];
   roseCount=0; roseT=0; letterT=0;
   roseTitleEl.style.opacity=1; roseCountEl.style.opacity=1;
   roseCountEl.textContent='已 种 下 0 朵';
-  const cols=[[70,110,255],[150,80,255],[60,190,235],[190,90,220],[90,140,255]];
+  /* 与玫瑰同色系的丝绸光帘：紫罗兰 / 梅子 / 玫瑰金 / 一点青做冷暖对比 */
+  const cols=[[120,86,200],[176,84,150],[214,132,120],[92,120,196],[196,110,168],[80,150,190]];
   blobs=[];
-  for (let i=0;i<7;i++){
-    const r=Math.min(w,h)*(.30+Math.random()*.34);
-    blobs.push({x:Math.random()*w,y:Math.random()*h,r:r,
-      vx:(Math.random()-.5)*.18,vy:(Math.random()-.5)*.14,
-      ph:Math.random()*6.283,sp:.0035+Math.random()*.004,
-      spr:makeBlobSprite(cols[i%cols.length],256)});
+  for (let i=0;i<(MOBILE?5:7);i++){
+    blobs.push({
+      x:Math.random()*w, y:Math.random()*h,
+      r:Math.min(w,h)*(.42+Math.random()*.40),
+      sx:1.5+Math.random()*1.5, sy:.30+Math.random()*.26,
+      rot:Math.random()*6.283, rv:(Math.random()-.5)*.00006,
+      vx:(Math.random()-.5)*.11, vy:(Math.random()-.5)*.07,
+      ph:Math.random()*6.283, sp:.0026+Math.random()*.0032,
+      spr:makeVeilSprite(cols[i%cols.length],256)});
   }
   rstars=[];
   for (let i=0;i<(MOBILE?90:160);i++) rstars.push({x:Math.random()*w,y:Math.random()*h,
     r:Math.random()*1.15+.25,a:Math.random(),sp:Math.random()*.018+.004});
+  /* 缓缓上浮的星尘 */
+  dust=[];
+  for (let i=0;i<(MOBILE?46:80);i++) dust.push({x:Math.random()*w,y:Math.random()*h,
+    r:Math.random()*1.5+.5,vy:-(Math.random()*.16+.05),sway:Math.random()*6.283,
+    ss:Math.random()*.012+.004,a:Math.random()*.5+.25,hue:Math.random()<.5?38:330});
 }
-/* 一朵玫瑰 = 若干层矢量花瓣 */
+/* 一朵玫瑰 = 六层矢量花瓣，按黄金角错开排布 */
+const ROSE_PALETTE=[
+  {h:346,s:84,l:50},   /* 玫红 */
+  {h:354,s:76,l:47},   /* 正红 */
+  {h:332,s:80,l:56},   /* 桃粉 */
+  {h:18, s:66,l:60},   /* 香槟 */
+  {h:308,s:62,l:56},   /* 紫玫 */
+  {h:0,  s:0, l:74}    /* 月白 */
+];
+const GOLDEN=2.39996;
 function plantRose(cx,cy){
   const {w,h}=L.rose;
   const R=Math.min(w,h)*(.062+Math.random()*.05);
-  const hue=330+Math.random()*22;
+  const pal=ROSE_PALETTE[Math.floor(Math.random()*ROSE_PALETTE.length)];
+  const hue=pal.h+(Math.random()-.5)*10;
   const layers=[];
-  const defs=[[7,1.00,.62],[6,.76,.60],[5,.55,.58],[4,.37,.56],[3,.22,.54]];
+  /* [花瓣数, 长度比, 宽度比, 卷曲] —— 外层大而舒展，内层小而紧卷 */
+  const defs=[[8,1.00,.60,.10],[7,.84,.58,.20],[6,.68,.55,.32],
+              [5,.52,.51,.46],[4,.38,.47,.60],[3,.25,.43,.74]];
+  let idx=0;
   for (let j=0;j<defs.length;j++){
-    const [n,len,wid]=defs[j];
-    const petals=[];
-    for (let p=0;p<n;p++){
+    const d=defs[j], petals=[];
+    for (let p=0;p<d[0];p++){
       petals.push({
-        a:(p/n)*6.283 + j*.55 + Math.random()*.12,
-        len:R*len*(.92+Math.random()*.16),
-        wid:R*len*wid*(.9+Math.random()*.2),
-        tilt:(Math.random()-.5)*.25,
-        delay:(defs.length-1-j)*.075+Math.random()*.05,
-        lit:52+j*7+Math.random()*6,
-        sat:88-j*3
+        a:idx*GOLDEN + (Math.random()-.5)*.10,
+        len:R*d[1]*(.93+Math.random()*.14),
+        wid:R*d[1]*d[2]*(.9+Math.random()*.2),
+        curl:d[3]*(.85+Math.random()*.3),
+        tilt:(Math.random()-.5)*.22,
+        delay:(defs.length-1-j)*.068+Math.random()*.045,
+        lit:pal.l+j*5.5+Math.random()*5,
+        sat:pal.s-j*2.5
       });
+      idx++;
     }
     layers.push(petals);
   }
-  roses.push({x:cx,y:cy,R:R,hue:hue,layers:layers,age:0,rot:Math.random()*6.283,
-    rotV:(Math.random()-.5)*.00035,sway:Math.random()*6.283});
+  roses.push({x:cx,y:cy,R:R,hue:hue,sat:pal.s,layers:layers,age:0,rot:Math.random()*6.283,
+    rotV:(Math.random()-.5)*.00030,sway:Math.random()*6.283,shed:1.5+Math.random()*2});
   if (roses.length>ROSE_MAX) roses.shift();
   /* 绽放时溅出的星屑 */
   for (let i=0;i<(MOBILE?8:14);i++){
@@ -1189,38 +1302,61 @@ function roseTouch(x,y){
   roseLastPlant=now;
   plantRose(x,y);
 }
-function drawPetal(ctx,len,wid){
+function drawPetal(ctx,len,wid,curl){
+  /* curl 越大瓣尖越收拢，内层花瓣因此更紧卷 */
+  const tip=1-(curl||0)*.55;
   ctx.beginPath();
   ctx.moveTo(0,0);
-  ctx.bezierCurveTo(wid,-len*.30, wid*.72,-len*.86, 0,-len);
-  ctx.bezierCurveTo(-wid*.72,-len*.86, -wid,-len*.30, 0,0);
+  ctx.bezierCurveTo(wid,-len*.30, wid*.78*tip,-len*.88, 0,-len);
+  ctx.bezierCurveTo(-wid*.78*tip,-len*.88, -wid,-len*.30, 0,0);
   ctx.closePath();
 }
 function drawRose(dt){
   const {x:ctx,w,h}=L.rose;
   roseT+=dt/1000;
 
-  /* 液体星河底 */
+  /* 深空丝绸：靛蓝 → 梅子 → 底部暖玫瑰，和花同色系 */
   const bg=ctx.createLinearGradient(0,0,0,h);
-  bg.addColorStop(0,'#060a26'); bg.addColorStop(.45,'#0a0733'); bg.addColorStop(1,'#04030f');
+  bg.addColorStop(0,'#070516'); bg.addColorStop(.34,'#130c2b');
+  bg.addColorStop(.68,'#221033'); bg.addColorStop(1,'#2b1430');
   ctx.globalCompositeOperation='source-over';
   ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
+  /* 底部暖光，托住花海 */
+  const warm=ctx.createRadialGradient(w/2,h*1.02,0,w/2,h*1.02,Math.max(w,h)*.85);
+  warm.addColorStop(0,'rgba(255,150,120,.16)');
+  warm.addColorStop(.45,'rgba(190,90,140,.07)');
+  warm.addColorStop(1,'rgba(120,60,140,0)');
+  ctx.fillStyle=warm; ctx.fillRect(0,0,w,h);
+  /* 丝绸光帘 */
   ctx.globalCompositeOperation='lighter';
   for (const b of blobs){
-    b.ph+=b.sp;
-    b.x+=b.vx+Math.sin(b.ph)*.30; b.y+=b.vy+Math.cos(b.ph*.8)*.24;
-    if (b.x<-b.r) b.x=w+b.r; if (b.x>w+b.r) b.x=-b.r;
-    if (b.y<-b.r) b.y=h+b.r; if (b.y>h+b.r) b.y=-b.r;
-    const rr=b.r*(.86+.18*Math.sin(b.ph*1.3));
-    ctx.globalAlpha=.85;
-    ctx.drawImage(b.spr,b.x-rr,b.y-rr,rr*2,rr*2);
+    b.ph+=b.sp; b.rot+=b.rv*dt;
+    b.x+=b.vx+Math.sin(b.ph)*.22; b.y+=b.vy+Math.cos(b.ph*.8)*.16;
+    const m=b.r*2;
+    if (b.x<-m) b.x=w+m; if (b.x>w+m) b.x=-m;
+    if (b.y<-m) b.y=h+m; if (b.y>h+m) b.y=-m;
+    const breath=.86+.18*Math.sin(b.ph*1.2);
+    ctx.save();
+    ctx.translate(b.x,b.y); ctx.rotate(b.rot);
+    ctx.scale(b.sx*breath,b.sy*breath);
+    ctx.globalAlpha=.9;
+    ctx.drawImage(b.spr,-b.r,-b.r,b.r*2,b.r*2);
+    ctx.restore();
   }
   ctx.globalAlpha=1;
   for (const s of rstars){
     s.a+=s.sp;
-    ctx.globalAlpha=.22+.5*Math.abs(Math.sin(s.a));
-    ctx.fillStyle='#e6f0ff';
+    ctx.globalAlpha=.20+.48*Math.abs(Math.sin(s.a));
+    ctx.fillStyle='#efe6ff';
     ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,6.283); ctx.fill();
+  }
+  /* 上浮星尘 */
+  for (const p of dust){
+    p.y+=p.vy; p.sway+=p.ss;
+    if (p.y<-6){ p.y=h+6; p.x=Math.random()*w; }
+    ctx.globalAlpha=p.a*(.5+.5*Math.sin(p.sway));
+    ctx.fillStyle=p.hue===38?'rgba(255,224,170,.9)':'rgba(255,180,214,.9)';
+    ctx.beginPath(); ctx.arc(p.x+Math.sin(p.sway)*12,p.y,p.r,0,6.283); ctx.fill();
   }
   ctx.globalAlpha=1;
 
@@ -1241,6 +1377,20 @@ function drawRose(dt){
   ctx.globalCompositeOperation='source-over';
   for (const rose of roses){
     rose.age+=dt/1000; rose.rot+=rose.rotV*dt; rose.sway+=dt*.0009;
+    /* 成熟的花偶尔飘落一片花瓣 */
+    rose.shed-=dt/1000;
+    if (rose.shed<=0&&rose.age>1.6){
+      rose.shed=2.5+Math.random()*3.5;
+      if (driftPetals.length<(MOBILE?26:44)){
+        const a=Math.random()*6.283;
+        driftPetals.push({x:rose.x+Math.cos(a)*rose.R*.7, y:rose.y+Math.sin(a)*rose.R*.5,
+          len:rose.R*(.30+Math.random()*.20), wid:rose.R*(.16+Math.random()*.10),
+          rot:Math.random()*6.283, rv:(Math.random()-.5)*.022,
+          vx:(Math.random()-.5)*.5, vy:.25+Math.random()*.35,
+          sway:Math.random()*6.283, ss:.016+Math.random()*.016,
+          hue:rose.hue, sat:rose.sat, life:1, dec:.0022+Math.random()*.0018});
+      }
+    }
     const breathe=1+Math.sin(roseT*1.4+rose.x*.01)*.026;
     /* 花朵底光 */
     const gr=rose.R*3.0;
@@ -1263,16 +1413,32 @@ function drawRose(dt){
         ctx.rotate(p.a+p.tilt*(1-t));
         const len=p.len*k, wid=p.wid*t;
         const g=ctx.createLinearGradient(0,0,0,-len);
-        g.addColorStop(0,'hsl('+(rose.hue-6)+','+p.sat+'%,'+(p.lit*.62)+'%)');
-        g.addColorStop(.55,'hsl('+rose.hue+','+p.sat+'%,'+p.lit+'%)');
-        g.addColorStop(1,'hsl('+(rose.hue+10)+','+(p.sat-6)+'%,'+Math.min(92,p.lit+22)+'%)');
+        g.addColorStop(0,'hsl('+(rose.hue-8)+','+p.sat+'%,'+(p.lit*.50)+'%)');
+        g.addColorStop(.42,'hsl('+(rose.hue-2)+','+p.sat+'%,'+(p.lit*.86)+'%)');
+        g.addColorStop(.78,'hsl('+rose.hue+','+p.sat+'%,'+p.lit+'%)');
+        g.addColorStop(1,'hsl('+(rose.hue+12)+','+Math.max(0,p.sat-10)+'%,'+Math.min(94,p.lit+24)+'%)');
         ctx.fillStyle=g;
-        drawPetal(ctx,len,wid); ctx.fill();
-        ctx.strokeStyle='hsla('+(rose.hue+14)+',100%,84%,'+(.30*t)+')';
-        ctx.lineWidth=Math.max(.6,rose.R*.018);
+        drawPetal(ctx,len,wid,p.curl); ctx.fill();
+        /* 瓣尖高光边 */
+        ctx.strokeStyle='hsla('+(rose.hue+16)+',100%,86%,'+(.32*t)+')';
+        ctx.lineWidth=Math.max(.6,rose.R*.016);
         ctx.stroke();
+        /* 中脉 */
+        ctx.strokeStyle='hsla('+(rose.hue+6)+',100%,92%,'+(.16*t)+')';
+        ctx.lineWidth=Math.max(.5,rose.R*.010);
+        ctx.beginPath(); ctx.moveTo(0,-len*.10); ctx.lineTo(0,-len*.80); ctx.stroke();
         ctx.restore();
       }
+    }
+    /* 花心周围压暗一圈，做出体积感 */
+    const sd=rose.R*.86*ease3(Math.min(1,rose.age/.6));
+    if (sd>0){
+      const sg=ctx.createRadialGradient(0,0,0,0,0,sd);
+      sg.addColorStop(0,'hsla('+(rose.hue-14)+',70%,14%,.50)');
+      sg.addColorStop(.55,'hsla('+(rose.hue-10)+',70%,18%,.20)');
+      sg.addColorStop(1,'hsla('+(rose.hue-10)+',70%,20%,0)');
+      ctx.fillStyle=sg;
+      ctx.beginPath(); ctx.arc(0,0,sd,0,6.283); ctx.fill();
     }
     /* 花心 */
     const cr=rose.R*.16*ease3(Math.min(1,rose.age/.5));
@@ -1285,6 +1451,26 @@ function drawRose(dt){
     }
     ctx.restore();
   }
+
+  /* 飘落的花瓣 */
+  ctx.globalCompositeOperation='source-over';
+  for (let i=driftPetals.length-1;i>=0;i--){
+    const p=driftPetals[i];
+    p.sway+=p.ss; p.rot+=p.rv;
+    p.x+=p.vx+Math.sin(p.sway)*.7; p.y+=p.vy; p.life-=p.dec;
+    if (p.life<=0||p.y>h+40){ driftPetals.splice(i,1); continue; }
+    ctx.save();
+    ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+    ctx.scale(1,.55+.45*Math.abs(Math.cos(p.sway)));
+    ctx.globalAlpha=Math.min(1,p.life*1.4);
+    const g=ctx.createLinearGradient(0,0,0,-p.len);
+    g.addColorStop(0,'hsl('+(p.hue-6)+','+p.sat+'%,42%)');
+    g.addColorStop(1,'hsl('+(p.hue+10)+','+p.sat+'%,76%)');
+    ctx.fillStyle=g;
+    drawPetal(ctx,p.len,p.wid,.2); ctx.fill();
+    ctx.restore();
+  }
+  ctx.globalAlpha=1;
 
   /* 星屑 */
   ctx.globalCompositeOperation='lighter';
@@ -1385,6 +1571,154 @@ roseCv.addEventListener('pointermove',e=>{
   const r=roseCv.getBoundingClientRect(); roseTouch(e.clientX-r.left,e.clientY-r.top);
 });
 addEventListener('pointerup',()=>{ roseDrag=false; });
+
+/* =========================================================
+   ★ 雾窗写字 ★
+   雾气盖住玻璃，手指擦开露出外面的灯与一行字
+   ========================================================= */
+const fogCv=document.getElementById('fogCv');
+const fogTipEl=document.getElementById('fogTip'),fogDoneEl=document.getElementById('fogDone');
+const fogMask=document.createElement('canvas');
+const fogMx=fogMask.getContext('2d',{willReadFrequently:true});
+const FOG_BIG='早 点 回 家', FOG_SMALL='夜 班 辛 苦 了';
+let fogCleared=0,fogDone=false,fogWipes=0,fogLastX=0,fogLastY=0,fogHasLast=false;
+let fogBrush=null,fogGlow=0,fogSqueak=0,fogReveal=0;
+
+function makeBrush(size){
+  const c=document.createElement('canvas'); c.width=c.height=size;
+  const x=c.getContext('2d');
+  const g=x.createRadialGradient(size/2,size/2,0,size/2,size/2,size/2);
+  g.addColorStop(0,'rgba(0,0,0,1)'); g.addColorStop(.55,'rgba(0,0,0,.85)');
+  g.addColorStop(.85,'rgba(0,0,0,.25)'); g.addColorStop(1,'rgba(0,0,0,0)');
+  x.fillStyle=g; x.fillRect(0,0,size,size);
+  return c;
+}
+function fogInit(){
+  L.fog.fit();
+  const {w,h}=L.fog;
+  fogMask.width=Math.max(1,Math.round(w)); fogMask.height=Math.max(1,Math.round(h));
+  fogMx.setTransform(1,0,0,1,0,0);
+  fogMx.globalCompositeOperation='source-over';
+  fogMx.clearRect(0,0,fogMask.width,fogMask.height);
+  /* 雾气本体 */
+  const g=fogMx.createLinearGradient(0,0,0,fogMask.height);
+  g.addColorStop(0,'rgba(214,232,246,.94)');
+  g.addColorStop(.5,'rgba(200,222,240,.92)');
+  g.addColorStop(1,'rgba(186,210,232,.95)');
+  fogMx.fillStyle=g; fogMx.fillRect(0,0,fogMask.width,fogMask.height);
+  /* 颗粒感 */
+  for (let i=0;i<Math.round(fogMask.width*fogMask.height/900);i++){
+    const x=Math.random()*fogMask.width,y=Math.random()*fogMask.height;
+    fogMx.fillStyle='rgba(255,255,255,'+(Math.random()*.35)+')';
+    fogMx.beginPath(); fogMx.arc(x,y,Math.random()*2.2+.4,0,6.283); fogMx.fill();
+  }
+  fogBrush=makeBrush(Math.round(Math.max(58,Math.min(w,h)*0.16)));
+  fogCleared=0; fogDone=false; fogWipes=0; fogHasLast=false; fogGlow=0; fogReveal=0;
+  fogTipEl.style.opacity=1; fogDoneEl.classList.remove('on');
+  buildRain();
+}
+function fogWipeAt(x,y){
+  if (!fogBrush) return;
+  const s=fogBrush.width;
+  fogMx.globalCompositeOperation='destination-out';
+  if (fogHasLast){
+    const dx=x-fogLastX,dy=y-fogLastY;
+    const dist=Math.hypot(dx,dy);
+    const steps=Math.max(1,Math.ceil(dist/(s*.22)));
+    for (let i=1;i<=steps;i++){
+      const px=fogLastX+dx*i/steps, py=fogLastY+dy*i/steps;
+      fogMx.drawImage(fogBrush,px-s/2,py-s/2,s,s);
+    }
+  } else {
+    fogMx.drawImage(fogBrush,x-s/2,y-s/2,s,s);
+  }
+  fogMx.globalCompositeOperation='source-over';
+  fogLastX=x; fogLastY=y; fogHasLast=true;
+  const now=performance.now();
+  if (now-fogSqueak>220){ fogSqueak=now; airPuff(.045,.16,1500); }
+  if ((++fogWipes%10)===0) fogCheck();
+}
+function fogCheck(){
+  const w=fogMask.width,h=fogMask.height;
+  if (!w||!h) return;
+  const d=fogMx.getImageData(0,0,w,h).data;
+  let clear=0,total=0;
+  for (let y=0;y<h;y+=10){
+    for (let x=0;x<w;x+=10){
+      total++;
+      if (d[(y*w+x)*4+3]<60) clear++;
+    }
+  }
+  fogCleared=total?clear/total:0;
+  if (fogCleared>0.42&&!fogDone){
+    fogDone=true;
+    fogTipEl.style.opacity=0;
+    fogDoneEl.classList.add('on');
+    chime(); sparkleUp();
+  }
+}
+function drawFog(dt){
+  const {x:ctx,w,h}=L.fog;
+  rainT+=dt/1000;
+  lightNext-=dt/1000;
+  if (lightNext<=0){ lightning=1; lightNext=8+Math.random()*12; }
+  lightning=Math.max(0,lightning-dt*.004);
+  fogReveal+=((fogDone?1:Math.min(1,fogCleared/0.42))-fogReveal)*.05;
+  fogGlow=fogDone?Math.min(1,fogGlow+dt/1600):fogReveal*.55;
+
+  ctx.clearRect(0,0,w,h);
+  /* 玻璃外面：雨夜霓虹 */
+  paintRainScene(ctx,w,h,rainT);
+
+  /* 藏在雾底下的字 */
+  const fs=Math.max(30,Math.min(w*.128,h*.11));
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  const cy=h*.47;
+  ctx.save();
+  ctx.font='700 '+fs+'px '+LETTER_FONT;
+  const a=.55+fogGlow*.45;
+  const g=ctx.createLinearGradient(0,cy-fs*.7,0,cy+fs*.7);
+  g.addColorStop(0,'rgba(255,246,222,'+a+')');
+  g.addColorStop(1,'rgba(255,196,120,'+a+')');
+  ctx.shadowColor='rgba(255,190,110,'+(.55+fogGlow*.45)+')';
+  ctx.shadowBlur=fs*(.45+fogGlow*.5);
+  ctx.fillStyle=g;
+  ctx.fillText(FOG_BIG,w/2,cy);
+  ctx.shadowBlur=fs*.16;
+  ctx.fillText(FOG_BIG,w/2,cy);
+  ctx.restore();
+  ctx.save();
+  ctx.font=Math.round(fs*.34)+'px '+LETTER_FONT;
+  ctx.shadowColor='rgba(255,200,140,.6)'; ctx.shadowBlur=fs*.22;
+  ctx.fillStyle='rgba(255,226,180,'+(.42+fogGlow*.5)+')';
+  ctx.fillText(FOG_SMALL,w/2,cy+fs*.92);
+  ctx.restore();
+  /* 小爱心 */
+  ctx.globalCompositeOperation='lighter';
+  ctx.globalAlpha=.30+fogGlow*.6;
+  ctx.fillStyle='rgba(255,140,180,.9)';
+  heartPath(w/2,cy-fs*1.28,fs*.30,ctx); ctx.fill();
+  ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
+
+  /* 雾层 */
+  ctx.drawImage(fogMask,0,0,w,h);
+  /* 玻璃水珠画在雾之上 */
+  paintGlass(ctx,w,h,dt);
+  const vg=ctx.createRadialGradient(w/2,h*.5,Math.min(w,h)*.3,w/2,h*.5,Math.max(w,h)*.8);
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.55)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,w,h);
+}
+let fogDrag=false;
+fogCv.addEventListener('pointerdown',e=>{
+  e.stopPropagation(); audio(); fogDrag=true; fogHasLast=false;
+  const r=fogCv.getBoundingClientRect(); fogWipeAt(e.clientX-r.left,e.clientY-r.top);
+});
+fogCv.addEventListener('pointermove',e=>{
+  if (!fogDrag) return;
+  e.stopPropagation();
+  const r=fogCv.getBoundingClientRect(); fogWipeAt(e.clientX-r.left,e.clientY-r.top);
+});
+addEventListener('pointerup',()=>{ if (fogDrag){ fogDrag=false; fogHasLast=false; fogCheck(); } });
 
 /* =========================================================
    心电监护仪
@@ -2092,6 +2426,7 @@ const ACTIONS={
     bell(660,.10,.6);
   },
   monitor(){ closePanels(); L.mon.fit(); monReset(); openOv(monOv); },
+  fog(){ closePanels(); fogInit(); openOv(fogOv); showSub('用手指把雾擦开',3000); },
   syringe(){},
   night(){ closePanels(); nightEnter(); }
 };
@@ -2114,7 +2449,7 @@ document.querySelectorAll('.tool').forEach(el=>{
 function resizeAll(){
   W=innerWidth; H=innerHeight;
   for (const k in L) L[k].fit();
-  buildStars(); buildHeart(); buildSakura(); buildAurora();
+  buildStars(); buildHeart(); buildSakura(); buildRain();
   gxResize();
   if (stRun){ stCamTarget=Math.max(0,stBlocks.length*BLK_H-L.st.h*0.55); }
 }
@@ -2128,10 +2463,11 @@ function loop(now){
   if ((++actTick&7)===0) updateActive();
   if (ovOpen===roseOv) drawRose(dt);
   else if (ovOpen===monOv) drawMon(dt);
+  else if (ovOpen===fogOv) drawFog(dt);
   else {
     if (active==='s1'){ drawStarScene(); drawHeart3D(t,dt); }
     else if (active==='s2') drawSakura();
-    else if (active==='s3') drawAurora();
+    else if (active==='s3') drawRain(dt);
     else if (active==='s4'){ drawStBg(); drawStack(dt); }
     else if (active==='s5') drawGalaxy(t,dt);
   }
