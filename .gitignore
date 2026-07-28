@@ -1,5 +1,6 @@
-# 只发布网页本体，其余本地文件一律不上传到 GitHub
+# 只发布网页本体与其依赖，其余本地文件一律不上传到 GitHub
 /*
 !.gitignore
 !index.html
 !three.min.js
+!vendor/
