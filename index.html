@@ -159,6 +159,21 @@ body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans S
   pointer-events:none;text-shadow:0 0 16px rgba(255,180,90,.85),0 0 34px rgba(255,140,80,.45)}
 .fog-done.on{opacity:1}
 
+/* ---- 解压药板 ---- */
+#popOv{background:#f6ecec}
+.pop-tip{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 62px);transform:translateX(-50%);
+  z-index:4;font-size:11.5px;letter-spacing:.2em;color:rgba(125,43,82,.72);pointer-events:none;
+  white-space:nowrap;transition:opacity 1s}
+.pop-done{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 62px);transform:translateX(-50%);
+  z-index:4;font-size:clamp(12px,3.2vw,14.5px);letter-spacing:.16em;color:#a8365f;font-weight:600;
+  opacity:0;transition:opacity 1.2s;pointer-events:none;white-space:nowrap;
+  text-shadow:0 2px 14px rgba(255,255,255,.9)}
+.pop-done.on{opacity:1}
+#popAgain{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);transform:translateX(-50%);
+  z-index:4;margin:0;background:rgba(168,54,95,.10);border-color:rgba(168,54,95,.32);color:#a8365f}
+#popAgain:hover{background:rgba(168,54,95,.22)}
+#popOv .ov-close{background:rgba(168,54,95,.10);border-color:rgba(168,54,95,.3);color:#a8365f}
+
 /* ---- 星河玫瑰 ---- */
 #roseOv{background:#03040f}
 .rose-title{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 11%);transform:translateX(-50%);
@@ -323,12 +338,15 @@ body.rose .topbar,body.rose .dots{opacity:0;pointer-events:none}
     <canvas class="bgc" id="cvSakura"></canvas>
     <div class="sc-head"><h2>白 昼 · 补 给 站</h2><p>D A Y　S H I F T</p></div>
     <div class="tools">
-      <div class="tool" data-act="mood">
+      <div class="tool" data-act="pop">
         <svg viewBox="0 0 48 48" fill="none">
-          <rect x="8" y="14" width="32" height="25" rx="5" fill="#ff6fa5"/>
-          <path d="M18 14V11a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v3" stroke="#a8365f" stroke-width="2.6"/>
-          <path d="M24 23v9M19.5 27.5h9" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>
-        </svg><span>情绪急救</span>
+          <rect x="7" y="6" width="34" height="36" rx="4" fill="#e6ecf5" stroke="#a8365f" stroke-width="2"/>
+          <circle cx="16" cy="15" r="4.2" fill="#ff7aa8"/><circle cx="32" cy="15" r="4.2" fill="#ffc36b"/>
+          <circle cx="16" cy="27" r="4.2" fill="#7ec8ff"/><circle cx="32" cy="27" r="4.2" fill="#9be6b4"/>
+          <circle cx="16" cy="37" r="3" fill="none" stroke="#a8365f" stroke-width="1.6" stroke-dasharray="2 2"/>
+          <circle cx="32" cy="37" r="4.2" fill="#c79bff"/>
+          <circle cx="14.6" cy="13.6" r="1.5" fill="#fff" opacity=".85"/>
+        </svg><span>解压药板</span>
       </div>
       <div class="tool" data-act="rose">
         <svg viewBox="0 0 48 48" fill="none">
@@ -466,18 +484,12 @@ body.rose .topbar,body.rose .dots{opacity:0;pointer-events:none}
 <div class="dots" id="dots"></div>
 <div class="subtitle" id="subtitle"></div>
 
-<div class="panel" id="moodPanel">
-  <div class="close" data-close>✕</div>
-  <h3>情 绪 急 救 站</h3>
-  <div class="panel-sub">现在是哪一格？</div>
-  <div class="moods">
-    <div class="mood" data-mood="tired"><b>😮‍💨</b>站到腿麻</div>
-    <div class="mood" data-mood="sad"><b>🥲</b>有点委屈</div>
-    <div class="mood" data-mood="happy"><b>🌞</b>今天超顺</div>
-    <div class="mood" data-mood="miss"><b>🫧</b>有点想你</div>
-  </div>
-  <div class="mood-reply" id="moodReply"></div>
-  <button class="mini-btn" id="moodAgain" style="display:none">换 一 句</button>
+<div class="overlay" id="popOv">
+  <canvas id="popCv"></canvas>
+  <div class="pop-tip" id="popTip">一 颗 一 颗 按 爆 它 · 手 指 划 过 去 能 连 按</div>
+  <div class="pop-done" id="popDone">整 板 拆 完 了 · 今 天 的 压 力 到 此 为 止</div>
+  <button class="mini-btn" id="popAgain">再 来 一 板</button>
+  <div class="ov-close" data-ovclose>✕</div>
 </div>
 
 <div class="overlay" id="roseOv">
@@ -594,7 +606,7 @@ function mkLayer(id){
 }
 const L={stars:mkLayer('cvStars'),heart:mkLayer('cvHeart'),sakura:mkLayer('cvSakura'),
   rain:mkLayer('cvRain'),stBg:mkLayer('cvStBg'),fx:mkLayer('fx'),
-  rose:mkLayer('roseCv'),mon:mkLayer('monCv'),sn:mkLayer('snCv'),fog:mkLayer('fogCv')};
+  rose:mkLayer('roseCv'),mon:mkLayer('monCv'),sn:mkLayer('snCv'),fog:mkLayer('fogCv'),pop:mkLayer('popCv')};
 
 /* =========================================================
    S1 星空 + 3D 粒子爱心（原版）
@@ -1364,7 +1376,7 @@ scroller.addEventListener('scroll',updateActive,{passive:true});
 /* =========================================================
    覆盖层
    ========================================================= */
-const roseOv=document.getElementById('roseOv'),monOv=document.getElementById('monOv'),fogOv=document.getElementById('fogOv');
+const roseOv=document.getElementById('roseOv'),monOv=document.getElementById('monOv'),fogOv=document.getElementById('fogOv'),popOv=document.getElementById('popOv');
 let ovOpen=null;
 function openOv(el){ closeOv(); ovOpen=el; el.classList.add('show'); }
 function closeOv(){
@@ -2611,7 +2623,9 @@ let gxYaw=.5,gxPitch=-.22,gxYawV=.00010,gxPitchV=0,gxDist=26,gxDistT=26;
 let gxSpread=0,gxSpreadT=0,gxSwirl=0,gxSwirlT=0,gxWarm=0,gxWarmT=0,gxBurst=0;
 let gxHue=0,gxHueT=0,gxMix=1,gxShapeIdx=0,gxLastShape=0;
 const GX_N=MOBILE?14000:30000;
-const SHAPE_NAMES=['星云','心','旋涡','星环','晶格','圣诞树','汽车','房屋','苹果','五角星'];
+const SHAPE_NAMES=['星云','心','旋涡','星环','晶格','圣诞树','汽车','房屋','苹果','五角星',
+                   '冰淇淋','棒棒糖','排球','针管','咖啡杯','月亮'];
+const SHAPE_N=SHAPE_NAMES.length;
 const gxShapeEl=document.getElementById('gxShape'),gxGestEl=document.getElementById('gxGest');
 const gxFaceEl=document.getElementById('gxFace'),gxCountEl=document.getElementById('gxCount');
 const gxShoutEl=document.getElementById('gxShout');
@@ -2662,7 +2676,12 @@ const C={
   ice:[.62,.82,1.0], violet:[.72,.56,1.0], white:[1,1,1], gold:[1,.80,.36],
   red:[1,.24,.28], pink:[1,.52,.72], green:[.28,.86,.42], deepGreen:[.16,.62,.30],
   brown:[.55,.34,.18], grey:[.34,.36,.42], glass:[.60,.86,1.0], cream:[.96,.90,.76],
-  roof:[.78,.28,.24], warm:[1,.84,.46], leaf:[.40,.82,.36], darkGrey:[.16,.17,.22]
+  roof:[.78,.28,.24], warm:[1,.84,.46], leaf:[.40,.82,.36], darkGrey:[.16,.17,.22],
+  cone:[.86,.62,.30], scoopPink:[1,.62,.74], scoopMint:[.62,.95,.80], scoopCream:[1,.93,.78],
+  sauce:[.62,.26,.16], candyA:[1,.34,.52], candyB:[1,.96,.92],
+  vballBlue:[.24,.46,.92], vballYellow:[1,.82,.24], seam:[.14,.15,.20],
+  pinkLiquid:[1,.34,.60], needle:[.82,.86,.94],
+  coffee:[.34,.18,.10], steam:[.86,.92,1.0], moon:[.96,.94,.82], crater:[.72,.70,.60]
 };
 function gxShapePoint(kind,i,n){
   const GA=Math.PI*(3-Math.sqrt(5));
@@ -2804,7 +2823,7 @@ function gxShapePoint(kind,i,n){
       }]
     ]);
   }
-  default:{                                   /* 五角星（有厚度） */
+  case 9:{                                    /* 五角星（有厚度） */
     const a=Math.random()*6.283;
     const seg=Math.floor(a/(Math.PI/5));
     const inner=2.9, outer=7.3;
@@ -2813,7 +2832,134 @@ function gxShapePoint(kind,i,n){
     const r=(r0+(r1-r0)*local)*Math.sqrt(rnd(.10,1.0));
     return {p:[Math.cos(a)*r,Math.sin(a)*r,rnd(-.75,.75)],
       c:Math.random()<.78?C.gold:C.white};
-  }}
+  }
+  case 10:{                                   /* 冰淇淋 */
+    return pickPart([
+      [30,()=>{                               /* 蛋筒：倒圆锥 + 网格纹 */
+        const t=Math.sqrt(Math.random());
+        const r=3.2*t, a=Math.random()*6.283;
+        const y=-7.4+t*5.6;
+        const grid=(Math.abs(((a*6/6.283)%1)-.5)<.09)||(Math.abs(((t*7)%1)-.5)<.09);
+        return {p:[Math.cos(a)*r,y,Math.sin(a)*r],c:grid?[.62,.40,.18]:C.cone};
+      }],
+      [40,()=>{                               /* 三球冰淇淋 */
+        const k=Math.floor(Math.random()*3);
+        const cx=[-1.5,1.5,0][k], cy=[-1.0,-0.6,2.2][k], cz=[.5,-.5,0][k];
+        const cols=[C.scoopPink,C.scoopMint,C.scoopCream];
+        const s=spherePt(cx,cy,cz,2.5,cols[k]);
+        return s;
+      }],
+      [8,()=>{                                /* 淋在上面的酱 */
+        const a=Math.random()*6.283, t=Math.random();
+        const r=2.9*(1-t*.5);
+        return {p:[Math.cos(a+t*3)*r, 3.6-t*3.4, Math.sin(a+t*3)*r],c:C.sauce};
+      }],
+      [5,()=>spherePt(0,4.9,0,.85,C.red)],    /* 樱桃 */
+      [3,()=>({p:[rnd(-.14,.14),5.6+Math.random()*1.0,rnd(-.14,.14)],c:C.brown})],
+      [6,()=>{                                /* 彩针 */
+        const a=Math.random()*6.283,t=Math.random();
+        const cols=[C.gold,C.ice,C.pink,C.green];
+        return {p:[Math.cos(a)*2.6*(1-t*.4),2.0+t*2.2,Math.sin(a)*2.6*(1-t*.4)],
+          c:cols[Math.floor(Math.random()*4)]};
+      }]
+    ]);
+  }
+  case 11:{                                   /* 棒棒糖 */
+    return pickPart([
+      [72,()=>{                               /* 糖盘：阿基米德螺旋条纹 */
+        const a=Math.random()*6.283, r=6.0*Math.sqrt(Math.random());
+        const band=Math.floor((a/6.283*5+r*.62)%2);
+        const cols=[C.candyA,C.candyB];
+        return {p:[Math.cos(a)*r,Math.sin(a)*r+2.0,rnd(-.55,.55)],c:cols[band]};
+      }],
+      [10,()=>{                               /* 糖盘外圈 */
+        const a=Math.random()*6.283;
+        return {p:[Math.cos(a)*6.05,Math.sin(a)*6.05+2.0,rnd(-.6,.6)],c:C.white};
+      }],
+      [18,()=>cylPt(0,-5.4,0,.42,7.6,'y',C.white)]   /* 糖棍 */
+    ]);
+  }
+  case 12:{                                   /* 排球 */
+    const u=Math.random()*2-1,th=Math.random()*6.283,s=Math.sqrt(Math.max(0,1-u*u));
+    const R=6.6;
+    const x=s*Math.cos(th),y=u,z=s*Math.sin(th);
+    /* 用两个正交方向切出经典排球的分块与接缝 */
+    const b1=Math.floor(((Math.atan2(z,x)/6.283+.5)*3)%3);
+    const seam=Math.abs(((Math.atan2(z,x)/6.283+.5)*3)%1-.5)>.455 ||
+               Math.abs(((Math.atan2(y,Math.hypot(x,z))/3.1416+.5)*3)%1-.5)>.46;
+    const cols=[C.white,C.vballBlue,C.vballYellow];
+    return {p:[x*R,y*R,z*R],c:seam?C.seam:cols[b1]};
+  }
+  case 13:{                                   /* 针管 */
+    return pickPart([
+      [30,()=>cylPt(-0.6,0,0,1.5,7.2,'x',C.glass)],        /* 筒身 */
+      [20,()=>cylPt(-2.4,0,0,1.28,3.4,'x',C.pinkLiquid)],  /* 药液 */
+      [8,()=>cylPt(1.9,0,0,.85,3.4,'x',C.white)],          /* 推杆 */
+      [6,()=>{                                             /* 推杆末端十字 */
+        const arm=Math.random()<.5;
+        return {p:[3.9+rnd(-.2,.2), arm?rnd(-1.5,1.5):rnd(-.2,.2), arm?rnd(-.2,.2):rnd(-1.5,1.5)],c:C.white};
+      }],
+      [6,()=>{                                             /* 尾翼 */
+        const a=Math.random()*6.283;
+        return {p:[3.0+rnd(-.15,.15),Math.cos(a)*2.4,Math.sin(a)*2.4],c:C.white};
+      }],
+      [8,()=>cylPt(-4.6,0,0,.55,1.4,'x',C.grey)],          /* 针座 */
+      [14,()=>cylPt(-6.9,0,0,.14,3.4,'x',C.needle)],       /* 针头 */
+      [8,()=>{                                             /* 刻度 */
+        const k=Math.floor(Math.random()*6);
+        return {p:[-2.6+k*.95, 1.5*Math.cos(rnd(-.5,.5)), 1.5*Math.sin(rnd(-.5,.5))],c:C.white};
+      }]
+    ]);
+  }
+  case 14:{                                   /* 咖啡杯 */
+    return pickPart([
+      [38,()=>{                               /* 杯身：略带锥度 */
+        const t=Math.random(), a=Math.random()*6.283;
+        const r=3.0+t*.9;
+        return {p:[Math.cos(a)*r,-3.4+t*5.2,Math.sin(a)*r],c:C.white};
+      }],
+      [12,()=>{                               /* 咖啡液面 */
+        const a=Math.random()*6.283, r=3.75*Math.sqrt(Math.random());
+        return {p:[Math.cos(a)*r,1.75,Math.sin(a)*r],c:C.coffee};
+      }],
+      [12,()=>{                               /* 把手 */
+        const a=rnd(-1.25,1.25), r=1.75;
+        const ph=Math.random()*6.283, rr=.34;
+        return {p:[4.0+Math.cos(a)*r+Math.cos(ph)*rr, -.6+Math.sin(a)*r, Math.sin(ph)*rr],c:C.white};
+      }],
+      [16,()=>{                               /* 碟子 */
+        const a=Math.random()*6.283, r=5.6*Math.sqrt(rnd(.25,1));
+        return {p:[Math.cos(a)*r,-3.9,Math.sin(a)*r],c:C.white};
+      }],
+      [12,()=>{                               /* 热气 */
+        const t=Math.random();
+        const a=t*7+Math.random()*.4;
+        return {p:[Math.sin(a)*1.5+rnd(-.3,.3), 2.4+t*5.4, Math.cos(a*.7)*1.1+rnd(-.3,.3)],
+          c:C.steam};
+      }],
+      [10,()=>{                               /* 拉花 */
+        const t=Math.random(), a=t*9;
+        const r=3.4*(1-t*.86);
+        return {p:[Math.cos(a)*r,1.80,Math.sin(a)*r],c:C.cream};
+      }]
+    ]);
+  }
+  case 15:{                                   /* 月亮：球体挖掉一个偏移的球 */
+    for (let k=0;k<24;k++){
+      const u=Math.random()*2-1,th=Math.random()*6.283,s=Math.sqrt(Math.max(0,1-u*u));
+      const R=6.8;
+      let x=s*Math.cos(th)*R, y=u*R, z=s*Math.sin(th)*R;
+      const shell=Math.random()<.72?1:Math.cbrt(Math.random());
+      x*=shell; y*=shell; z*=shell;
+      if (Math.hypot(x-4.3,y-1.1,z)<5.6) continue;         /* 咬掉一口 */
+      const crater=Math.random()<.10;
+      return {p:[x,y,z],c:crater?C.crater:(Math.random()<.7?C.moon:C.gold)};
+    }
+    return {p:[0,0,0],c:C.moon};
+  }
+  default:
+    return {p:[0,0,0],c:C.white};
+  }
 }
 function gxBuildShape(kind,n){
   const pos=new Float32Array(n*3), col=new Float32Array(n*3);
@@ -2854,8 +3000,9 @@ function initGalaxy(){
   });
   fadeScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),fadeMat));
 
-  const shapes=[];
-  for (let k=0;k<10;k++) shapes.push(gxBuildShape(k,GX_N));
+  /* 形态按需生成：启动只建第一个，切到哪个才建哪个 */
+  const shapes=new Array(SHAPE_N);
+  shapes[0]=gxBuildShape(0,GX_N);
 
   const uni={uTime:{value:0},uScale:{value:600},uMix:{value:1},
     uSpread:{value:0},uSwirl:{value:0},uWarm:{value:0},uBurst:{value:0},uHue:{value:0}};
@@ -2934,15 +3081,20 @@ function gxResize(){
   GX.uni.uScale.value=h*DPR*0.5;
   GX.needClear=true;
 }
+function gxGetShape(k){
+  if (!GX.shapes[k]) GX.shapes[k]=gxBuildShape(k,GX_N);
+  return GX.shapes[k];
+}
 function gxSetShape(idx){
   if (!GX||idx===gxShapeIdx) return;
+  const from=gxGetShape(gxShapeIdx), to=gxGetShape(idx);
   gxLastShape=gxShapeIdx; gxShapeIdx=idx;
   const A=GX.geo.getAttribute('aPosA'),B=GX.geo.getAttribute('aPosB');
   const CA=GX.geo.getAttribute('aColA'),CB=GX.geo.getAttribute('aColB');
-  A.array.set(GX.shapes[gxLastShape].pos); A.needsUpdate=true;
-  CA.array.set(GX.shapes[gxLastShape].col); CA.needsUpdate=true;
-  B.array.set(GX.shapes[gxShapeIdx].pos); B.needsUpdate=true;
-  CB.array.set(GX.shapes[gxShapeIdx].col); CB.needsUpdate=true;
+  A.array.set(from.pos); A.needsUpdate=true;
+  CA.array.set(from.col); CA.needsUpdate=true;
+  B.array.set(to.pos); B.needsUpdate=true;
+  CB.array.set(to.col); CB.needsUpdate=true;
   gxMix=0;
   gxShapeEl.textContent=SHAPE_NAMES[gxShapeIdx];
   gxShout(SHAPE_NAMES[gxShapeIdx]);
@@ -2991,7 +3143,7 @@ const gxCv=document.getElementById('galaxy');
 gxCv.addEventListener('pointerdown',e=>{
   audio(); gxDrag=true; gxLX=e.clientX; gxLY=e.clientY;
   const now=performance.now();
-  if (now-gxLastTap<330) gxSetShape((gxShapeIdx+1)%10);
+  if (now-gxLastTap<330) gxSetShape((gxShapeIdx+1)%SHAPE_N);
   gxLastTap=now;
   try{ gxCv.setPointerCapture(e.pointerId); }catch(err){}
 });
@@ -3206,7 +3358,7 @@ function camLoop(now){
     else if (gest)          { gxSpreadT=0.22; gxSwirlT=0.15; }
     if (twoDist>0) gxDistT=Math.max(13,Math.min(58,50-twoDist*54));
     if (gest==='victory'&&gestPrevStable!=='victory'&&now-shapeCool>900){
-      shapeCool=now; gxSetShape((gxShapeIdx+1)%10);
+      shapeCool=now; gxSetShape((gxShapeIdx+1)%SHAPE_N);
     }
     if (gest==='thumb'&&gestPrevStable!=='thumb'&&now-burstCool>1200){
       burstCool=now; gxBoom(); gxShout('爆发');
@@ -3330,8 +3482,7 @@ function showSub(t,ms){
   clearTimeout(subTimer);
   subTimer=setTimeout(()=>subtitle.classList.remove('show'),ms||3200);
 }
-const moodPanel=document.getElementById('moodPanel');
-function closePanels(){ moodPanel.classList.remove('show'); }
+function closePanels(){ /* 目前没有常驻面板，保留占位 */ }
 function isUI(el){
   return !!(el&&el.closest&&el.closest('.tool,.panel,.music-btn,.dots,.st-wrap,.overlay,.nightlamp,.mini-btn,#galaxy,.scroll-cue'));
 }
@@ -3340,41 +3491,205 @@ document.addEventListener('click',e=>{
   if (nightOn){ nightExit(); return; }
   if (!isUI(e.target)) closePanels();
 });
-const MOOD={
-  tired:['鞋脱了，腿抬高，剩下的我来。','今天的额度用完了，超支的记我账上。','不用汇报，躺着就行。','站了一天的人今晚不讲道理。'],
-  sad:['你没错。谁说的都不算。','讲，我听着，不打断也不劝。','这事我站你，别的都不重要。','难过就难过，不用马上好起来。'],
-  happy:['细节，我要听细节。','存好今天，以后能用上。','行，我也跟着高兴半天。','这运气分我一点。'],
-  miss:['巧了，我先想的。','别憋着，现在打过来。','在呢，随时。','那你看看这颗心，它一直没停。']
-};
-const MOOD_FX={
-  tired:()=>{ for(let i=0;i<3;i++) setTimeout(()=>firework(W*(.25+Math.random()*.5),H*(.3+Math.random()*.2),{hue:270,spread:.7}),i*260); chime(); },
-  sad:()=>{ heartBurst(W/2,H*.44,1); bell(392,.14,1.4); setTimeout(()=>bell(523.25,.12,1.6),160); },
-  happy:()=>{ confettiBurst(); sparkleUp(); },
-  miss:()=>{ streakRain(320,MOBILE?80:150,5.5); chime(); }
-};
-const moodReply=document.getElementById('moodReply'),moodAgain=document.getElementById('moodAgain');
-let curMood=null; const moodPtr={};
-function pickMood(k){
-  const a=MOOD[k];
-  moodPtr[k]=(moodPtr[k]===undefined)?Math.floor(Math.random()*a.length):(moodPtr[k]+1)%a.length;
-  return a[moodPtr[k]];
+/* =========================================================
+   ★ 解压药板 ★
+   护士本行的解压神器：一整板泡罩，一颗一颗按爆
+   ========================================================= */
+const popCv=document.getElementById('popCv');
+const popTipEl=document.getElementById('popTip'),popDoneEl=document.getElementById('popDone');
+const popAgainBtn=document.getElementById('popAgain');
+let popCells=[],popCols=5,popRows=8,popCellW=0,popCellH=0,popOX=0,popOY=0;
+let popDoneCount=0,popCombo=0,popComboT=0,popParts=[],popFloats=[],popFinished=false,popShake=0;
+const POP_WORDS=['深呼吸','不着急','喝口水','坐一会儿','肩膀放松','别硬扛','你已经很好了','慢一点',
+  '揉揉眼睛','伸个懒腰','够了就停','今天辛苦了','歇会儿','先吃饭','别急着回消息','脖子转两圈'];
+const POP_HUES=[344,20,48,150,196,268,318];
+
+function popInit(){
+  L.pop.fit();
+  const {w,h}=L.pop;
+  const ar=w/h;
+  popCols=ar>1.15?8:5;
+  popRows=ar>1.15?5:8;
+  const padX=w*0.10, padY=h*0.16;
+  const availW=w-padX*2, availH=h-padY*2;
+  popCellW=availW/popCols; popCellH=availH/popRows;
+  popOX=padX; popOY=padY;
+  popCells=[];
+  for (let r=0;r<popRows;r++) for (let c=0;c<popCols;c++){
+    popCells.push({c:c,r:r,popped:false,t:0,
+      hue:POP_HUES[Math.floor(Math.random()*POP_HUES.length)],
+      tear:Array.from({length:9},()=>0.62+Math.random()*0.34)});
+  }
+  popDoneCount=0; popCombo=0; popComboT=0;
+  popParts=[]; popFloats=[]; popFinished=false; popShake=0;
+  popTipEl.style.opacity=1;
+  popDoneEl.classList.remove('on');
 }
-document.querySelectorAll('.mood').forEach(m=>m.addEventListener('click',e=>{
-  e.stopPropagation();
-  document.querySelectorAll('.mood').forEach(x=>x.classList.remove('on'));
-  m.classList.add('on');
-  curMood=m.dataset.mood;
-  moodReply.textContent=pickMood(curMood);
-  moodReply.classList.add('show');
-  moodAgain.style.display='block';
-  MOOD_FX[curMood]();
-}));
-moodAgain.addEventListener('click',e=>{
-  e.stopPropagation(); if (!curMood) return;
-  moodReply.style.opacity=0;
-  setTimeout(()=>{ moodReply.textContent=pickMood(curMood); moodReply.style.opacity=1; },200);
-  bell(660,.12,.8);
+function popSound(k){
+  const ac=audio(),T=ac.currentTime;
+  const f=430+Math.min(k,18)*34+Math.random()*50;
+  const o=ac.createOscillator(); o.type='sine';
+  o.frequency.setValueAtTime(f*1.7,T);
+  o.frequency.exponentialRampToValueAtTime(f*.52,T+.055);
+  const g=ac.createGain();
+  g.gain.setValueAtTime(.0001,T);
+  g.gain.exponentialRampToValueAtTime(.20,T+.004);
+  g.gain.exponentialRampToValueAtTime(.0001,T+.10);
+  o.connect(g); g.connect(sfxGain); o.start(T); o.stop(T+.13);
+  /* 一点脆响，像塑料裂开 */
+  const len=Math.floor(ac.sampleRate*.045);
+  const b=ac.createBuffer(1,len,ac.sampleRate); const d=b.getChannelData(0);
+  for (let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,7);
+  const s=ac.createBufferSource(); s.buffer=b;
+  const bp=ac.createBiquadFilter(); bp.type='bandpass';
+  bp.frequency.value=2100+Math.min(k,18)*70; bp.Q.value=1.3;
+  const ng=ac.createGain(); ng.gain.value=.14;
+  s.connect(bp); bp.connect(ng); ng.connect(sfxGain); s.start(T); s.stop(T+.05);
+}
+function popCellAt(x,y){
+  const c=Math.floor((x-popOX)/popCellW), r=Math.floor((y-popOY)/popCellH);
+  if (c<0||r<0||c>=popCols||r>=popRows) return null;
+  return popCells[r*popCols+c]||null;
+}
+function popDo(x,y){
+  const cell=popCellAt(x,y);
+  if (!cell||cell.popped) return;
+  const cx=popOX+(cell.c+.5)*popCellW, cy=popOY+(cell.r+.5)*popCellH;
+  const R=Math.min(popCellW,popCellH)*.40;
+  if (Math.hypot(x-cx,y-cy)>R*1.12) return;
+  cell.popped=true; cell.t=0;
+  popDoneCount++;
+  const now=performance.now();
+  popCombo=(now-popComboT<620)?popCombo+1:1;
+  popComboT=now;
+  popSound(popCombo);
+  if (navigator.vibrate) { try{ navigator.vibrate(11); }catch(e){} }
+  for (let i=0;i<12;i++){
+    const a=Math.random()*6.283,v=.8+Math.random()*3.2;
+    popParts.push({x:cx,y:cy,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1.0,
+      life:1,dec:.020+Math.random()*.020,r:1.2+Math.random()*2.4,hue:cell.hue});
+  }
+  popFloats.push({x:cx,y:cy,txt:POP_WORDS[Math.floor(Math.random()*POP_WORDS.length)],
+    life:1,vy:-.55-Math.random()*.35});
+  popShake=Math.min(4,popShake+1.6);
+  if (popDoneCount>=popCells.length&&!popFinished){
+    popFinished=true;
+    popTipEl.style.opacity=0;
+    popDoneEl.classList.add('on');
+    setTimeout(()=>{ confettiBurst(); sparkleUp(); },260);
+  }
+}
+function drawPop(dt){
+  const {x:ctx,w,h}=L.pop;
+  popShake*=.86;
+  const sx=(Math.random()-.5)*popShake, sy=(Math.random()-.5)*popShake;
+  /* 暖白底 */
+  const bg=ctx.createLinearGradient(0,0,0,h);
+  bg.addColorStop(0,'#fdf3f0'); bg.addColorStop(.55,'#f7e9ec'); bg.addColorStop(1,'#efdfe6');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
+  const vg=ctx.createRadialGradient(w/2,h*.46,Math.min(w,h)*.25,w/2,h*.46,Math.max(w,h)*.72);
+  vg.addColorStop(0,'rgba(255,255,255,.35)'); vg.addColorStop(1,'rgba(180,140,160,.16)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,w,h);
+
+  ctx.save(); ctx.translate(sx,sy);
+  /* 铝塑板底 */
+  const bx=popOX-popCellW*.34, by=popOY-popCellH*.40;
+  const bw=popCellW*popCols+popCellW*.68, bh=popCellH*popRows+popCellH*.80;
+  const pg=ctx.createLinearGradient(bx,by,bx+bw,by+bh);
+  pg.addColorStop(0,'#f2f5f9'); pg.addColorStop(.35,'#dfe6ef');
+  pg.addColorStop(.6,'#eef2f7'); pg.addColorStop(1,'#d3dae5');
+  ctx.fillStyle=pg;
+  ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,Math.min(bw,bh)*.06); ctx.fill();
+  ctx.strokeStyle='rgba(150,165,185,.7)'; ctx.lineWidth=1.4; ctx.stroke();
+  /* 板上的印字 */
+  ctx.fillStyle='rgba(140,60,95,.42)';
+  ctx.font='600 '+Math.max(9,Math.min(w*.026,13))+'px system-ui,sans-serif';
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.fillText('元气补给片 · 一日一板 · 阳阳专用',bx+bw*.05,by+bh+Math.max(14,bh*.045));
+  ctx.textAlign='right';
+  ctx.fillText(popDoneCount+' / '+popCells.length,bx+bw*.95,by+bh+Math.max(14,bh*.045));
+
+  /* 泡罩 */
+  const R=Math.min(popCellW,popCellH)*.40;
+  for (const cell of popCells){
+    const cx=popOX+(cell.c+.5)*popCellW, cy=popOY+(cell.r+.5)*popCellH;
+    if (!cell.popped){
+      ctx.fillStyle='rgba(120,140,165,.20)';
+      ctx.beginPath(); ctx.ellipse(cx,cy+R*.18,R*.98,R*.92,0,0,6.283); ctx.fill();
+      const g=ctx.createRadialGradient(cx-R*.32,cy-R*.36,R*.05,cx,cy,R);
+      g.addColorStop(0,'hsla('+cell.hue+',92%,95%,.99)');
+      g.addColorStop(.42,'hsl('+cell.hue+',80%,74%)');
+      g.addColorStop(.86,'hsl('+cell.hue+',72%,55%)');
+      g.addColorStop(1,'hsl('+cell.hue+',62%,46%)');
+      ctx.fillStyle=g;
+      ctx.beginPath(); ctx.arc(cx,cy,R,0,6.283); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.68)';
+      ctx.beginPath(); ctx.ellipse(cx-R*.30,cy-R*.34,R*.26,R*.17,-0.7,0,6.283); ctx.fill();
+    } else {
+      cell.t=Math.min(1,cell.t+dt/220);
+      /* 破口 */
+      ctx.fillStyle='rgba(72,84,102,.55)';
+      ctx.beginPath(); ctx.arc(cx,cy,R*.86,0,6.283); ctx.fill();
+      /* 撕开的铝箔 */
+      ctx.fillStyle='rgba(226,232,240,.95)';
+      ctx.beginPath();
+      for (let i=0;i<9;i++){
+        const a=i/9*6.283;
+        const rr=R*cell.tear[i]*(1+(1-cell.t)*.5);
+        const px=cx+Math.cos(a)*rr, py=cy+Math.sin(a)*rr;
+        i?ctx.lineTo(px,py):ctx.moveTo(px,py);
+      }
+      ctx.closePath();
+      ctx.globalCompositeOperation='destination-out';
+      ctx.fill();
+      ctx.globalCompositeOperation='source-over';
+      ctx.strokeStyle='rgba(196,206,222,.9)'; ctx.lineWidth=1.6;
+      ctx.beginPath();
+      for (let i=0;i<9;i++){
+        const a=i/9*6.283;
+        const rr=R*cell.tear[i]*(1+(1-cell.t)*.5);
+        const px=cx+Math.cos(a)*rr, py=cy+Math.sin(a)*rr;
+        i?ctx.lineTo(px,py):ctx.moveTo(px,py);
+      }
+      ctx.closePath(); ctx.stroke();
+    }
+  }
+  /* 碎屑 */
+  for (let i=popParts.length-1;i>=0;i--){
+    const p=popParts[i];
+    p.x+=p.vx; p.y+=p.vy; p.vy+=.16; p.vx*=.99; p.life-=p.dec;
+    if (p.life<=0){ popParts.splice(i,1); continue; }
+    ctx.globalAlpha=p.life;
+    ctx.fillStyle='hsl('+p.hue+',85%,'+(58+p.life*22)+'%)';
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r*p.life,0,6.283); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  /* 飘字 */
+  ctx.textAlign='center';
+  for (let i=popFloats.length-1;i>=0;i--){
+    const f=popFloats[i];
+    f.y+=f.vy; f.life-=.011;
+    if (f.life<=0){ popFloats.splice(i,1); continue; }
+    ctx.globalAlpha=Math.min(1,f.life*1.6);
+    ctx.font='600 '+Math.max(12,Math.min(w*.036,17))+'px system-ui,sans-serif';
+    ctx.fillStyle='rgba(168,54,95,.92)';
+    ctx.fillText(f.txt,f.x,f.y);
+  }
+  ctx.globalAlpha=1;
+  ctx.restore();
+}
+let popDragging=false;
+popCv.addEventListener('pointerdown',e=>{
+  e.stopPropagation(); audio(); popDragging=true;
+  const r=popCv.getBoundingClientRect(); popDo(e.clientX-r.left,e.clientY-r.top);
 });
+popCv.addEventListener('pointermove',e=>{
+  if (!popDragging) return;
+  e.stopPropagation();
+  const r=popCv.getBoundingClientRect(); popDo(e.clientX-r.left,e.clientY-r.top);
+});
+addEventListener('pointerup',()=>{ popDragging=false; });
+popAgainBtn.addEventListener('click',e=>{ e.stopPropagation(); popInit(); bell(523.25,.12,.7); });
 const thermo=document.getElementById('thermo'),merc=document.getElementById('merc');
 const tempNum=document.getElementById('tempNum'),warmlight=document.getElementById('warmlight');
 const bandaid=document.getElementById('bandaid');
@@ -3429,7 +3744,7 @@ addEventListener('devicemotion',e=>{
 
 /* 按钮总线 */
 const ACTIONS={
-  mood(){ moodPanel.classList.add('show'); },
+  pop(){ closePanels(); popInit(); openOv(popOv); },
   rose(){
     closePanels();
     document.body.classList.add('rose');
@@ -3497,7 +3812,8 @@ function loop(now){
   const dt=Math.min(now-last,50); last=now;
   const t=now/1000;
   if ((++actTick&7)===0) updateActive();
-  if (ovOpen===roseOv) drawRose(dt);
+  if (ovOpen===popOv) drawPop(dt);
+  else if (ovOpen===roseOv) drawRose(dt);
   else if (ovOpen===monOv) drawMon(dt);
   else if (ovOpen===fogOv) drawFog(dt);
   else {
