@@ -159,20 +159,17 @@ body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans S
   pointer-events:none;text-shadow:0 0 16px rgba(255,180,90,.85),0 0 34px rgba(255,140,80,.45)}
 .fog-done.on{opacity:1}
 
-/* ---- 解压药板 ---- */
-#popOv{background:#f6ecec}
-.pop-tip{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 62px);transform:translateX(-50%);
-  z-index:4;font-size:11.5px;letter-spacing:.2em;color:rgba(125,43,82,.72);pointer-events:none;
-  white-space:nowrap;transition:opacity 1s}
-.pop-done{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 62px);transform:translateX(-50%);
-  z-index:4;font-size:clamp(12px,3.2vw,14.5px);letter-spacing:.16em;color:#a8365f;font-weight:600;
-  opacity:0;transition:opacity 1.2s;pointer-events:none;white-space:nowrap;
-  text-shadow:0 2px 14px rgba(255,255,255,.9)}
-.pop-done.on{opacity:1}
-#popAgain{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);transform:translateX(-50%);
-  z-index:4;margin:0;background:rgba(168,54,95,.10);border-color:rgba(168,54,95,.32);color:#a8365f}
-#popAgain:hover{background:rgba(168,54,95,.22)}
-#popOv .ov-close{background:rgba(168,54,95,.10);border-color:rgba(168,54,95,.3);color:#a8365f}
+/* ---- 元气糖果罐 ---- */
+#jarOv{background:#f6ecec}
+#jarOv .ov-close{background:rgba(168,54,95,.10);border-color:rgba(168,54,95,.3);color:#a8365f}
+.jar-tip{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 56px);transform:translateX(-50%);
+  z-index:4;font-size:11.5px;letter-spacing:.2em;color:rgba(125,43,82,.72);pointer-events:none;white-space:nowrap}
+.jar-count{position:absolute;right:16px;top:calc(env(safe-area-inset-top,0px) + 58px);
+  z-index:4;font-size:11px;letter-spacing:.14em;color:rgba(125,43,82,.55);pointer-events:none}
+.jar-btns{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);
+  z-index:4;display:flex;gap:10px}
+.jar-btns .mini-btn{margin:0;background:rgba(168,54,95,.10);border-color:rgba(168,54,95,.32);color:#a8365f}
+.jar-btns .mini-btn:hover{background:rgba(168,54,95,.22)}
 
 /* ---- 星河玫瑰 ---- */
 #roseOv{background:#03040f}
@@ -338,15 +335,15 @@ body.rose .topbar,body.rose .dots{opacity:0;pointer-events:none}
     <canvas class="bgc" id="cvSakura"></canvas>
     <div class="sc-head"><h2>白 昼 · 补 给 站</h2><p>D A Y　S H I F T</p></div>
     <div class="tools">
-      <div class="tool" data-act="pop">
+      <div class="tool" data-act="jar">
         <svg viewBox="0 0 48 48" fill="none">
-          <rect x="7" y="6" width="34" height="36" rx="4" fill="#e6ecf5" stroke="#a8365f" stroke-width="2"/>
-          <circle cx="16" cy="15" r="4.2" fill="#ff7aa8"/><circle cx="32" cy="15" r="4.2" fill="#ffc36b"/>
-          <circle cx="16" cy="27" r="4.2" fill="#7ec8ff"/><circle cx="32" cy="27" r="4.2" fill="#9be6b4"/>
-          <circle cx="16" cy="37" r="3" fill="none" stroke="#a8365f" stroke-width="1.6" stroke-dasharray="2 2"/>
-          <circle cx="32" cy="37" r="4.2" fill="#c79bff"/>
-          <circle cx="14.6" cy="13.6" r="1.5" fill="#fff" opacity=".85"/>
-        </svg><span>解压药板</span>
+          <rect x="12" y="6" width="24" height="5" rx="2.5" fill="#dfe8f2" stroke="#a8365f" stroke-width="1.6"/>
+          <path d="M11 12h26v27a4 4 0 0 1-4 4H15a4 4 0 0 1-4-4z" fill="rgba(215,235,248,.55)" stroke="#a8365f" stroke-width="2"/>
+          <circle cx="18" cy="34" r="4" fill="#ff7aa8"/><circle cx="27" cy="36" r="4.4" fill="#ffc36b"/>
+          <circle cx="33" cy="30" r="3.4" fill="#9be6b4"/><circle cx="21" cy="26" r="3.6" fill="#7ec8ff"/>
+          <circle cx="29" cy="22" r="3" fill="#c79bff"/>
+          <circle cx="16.6" cy="32.6" r="1.3" fill="#fff" opacity=".8"/>
+        </svg><span>元气糖果罐</span>
       </div>
       <div class="tool" data-act="rose">
         <svg viewBox="0 0 48 48" fill="none">
@@ -484,12 +481,16 @@ body.rose .topbar,body.rose .dots{opacity:0;pointer-events:none}
 <div class="dots" id="dots"></div>
 <div class="subtitle" id="subtitle"></div>
 
-<div class="overlay" id="popOv">
-  <canvas id="popCv"></canvas>
-  <div class="pop-tip" id="popTip">一 颗 一 颗 按 爆 它 · 手 指 划 过 去 能 连 按</div>
-  <div class="pop-done" id="popDone">整 板 拆 完 了 · 今 天 的 压 力 到 此 为 止</div>
-  <button class="mini-btn" id="popAgain">再 来 一 板</button>
+<div class="overlay" id="jarOv">
+  <canvas id="jarCv"></canvas>
+  <div class="jar-tip" id="jarTip">点 哪 掉 哪 · 按 住 糖 果 可 以 拖 着 甩</div>
+  <div class="jar-count" id="jarCount">0 / 0</div>
+  <div class="jar-btns">
+    <button class="mini-btn" id="jarStir">摇 一 摇</button>
+    <button class="mini-btn" id="jarClear">倒 空</button>
+  </div>
   <div class="ov-close" data-ovclose>✕</div>
+</div>
 </div>
 
 <div class="overlay" id="roseOv">
@@ -606,7 +607,7 @@ function mkLayer(id){
 }
 const L={stars:mkLayer('cvStars'),heart:mkLayer('cvHeart'),sakura:mkLayer('cvSakura'),
   rain:mkLayer('cvRain'),stBg:mkLayer('cvStBg'),fx:mkLayer('fx'),
-  rose:mkLayer('roseCv'),mon:mkLayer('monCv'),sn:mkLayer('snCv'),fog:mkLayer('fogCv'),pop:mkLayer('popCv')};
+  rose:mkLayer('roseCv'),mon:mkLayer('monCv'),sn:mkLayer('snCv'),fog:mkLayer('fogCv'),jar:mkLayer('jarCv')};
 
 /* =========================================================
    S1 星空 + 3D 粒子爱心（原版）
@@ -1376,7 +1377,7 @@ scroller.addEventListener('scroll',updateActive,{passive:true});
 /* =========================================================
    覆盖层
    ========================================================= */
-const roseOv=document.getElementById('roseOv'),monOv=document.getElementById('monOv'),fogOv=document.getElementById('fogOv'),popOv=document.getElementById('popOv');
+const roseOv=document.getElementById('roseOv'),monOv=document.getElementById('monOv'),fogOv=document.getElementById('fogOv'),jarOv=document.getElementById('jarOv');
 let ovOpen=null;
 function openOv(el){ closeOv(); ovOpen=el; el.classList.add('show'); }
 function closeOv(){
@@ -2624,7 +2625,8 @@ let gxSpread=0,gxSpreadT=0,gxSwirl=0,gxSwirlT=0,gxWarm=0,gxWarmT=0,gxBurst=0;
 let gxHue=0,gxHueT=0,gxMix=1,gxShapeIdx=0,gxLastShape=0;
 const GX_N=MOBILE?14000:30000;
 const SHAPE_NAMES=['星云','心','旋涡','星环','晶格','圣诞树','汽车','房屋','苹果','五角星',
-                   '冰淇淋','棒棒糖','排球','针管','咖啡杯','月亮'];
+                   '冰淇淋','棒棒糖','排球','针管','咖啡杯',
+                   '香蕉','书包','圣诞老人','小猫','小鸭','熊猫','企鹅','机器人','雪人','兔子'];
 const SHAPE_N=SHAPE_NAMES.length;
 const gxShapeEl=document.getElementById('gxShape'),gxGestEl=document.getElementById('gxGest');
 const gxFaceEl=document.getElementById('gxFace'),gxCountEl=document.getElementById('gxCount');
@@ -2681,7 +2683,13 @@ const C={
   sauce:[.62,.26,.16], candyA:[1,.34,.52], candyB:[1,.96,.92],
   vballBlue:[.24,.46,.92], vballYellow:[1,.82,.24], seam:[.14,.15,.20],
   pinkLiquid:[1,.34,.60], needle:[.82,.86,.94],
-  coffee:[.34,.18,.10], steam:[.86,.92,1.0], moon:[.96,.94,.82], crater:[.72,.70,.60]
+  coffee:[.34,.18,.10], steam:[.86,.92,1.0],
+  banana:[1,.86,.26], bananaDark:[.92,.74,.20],
+  bagBody:[.30,.52,.86], bagFlap:[.22,.42,.74], bagPocket:[.38,.60,.92], bagStrap:[.20,.30,.48],
+  santaRed:[.86,.16,.20], skin:[1,.82,.68], beltBlack:[.12,.12,.16],
+  catOrange:[1,.66,.30], catPink:[1,.62,.68], catDark:[.86,.48,.18],
+  duckYellow:[1,.84,.22], duckBeak:[1,.55,.12], duckWing:[.96,.76,.16],
+  robotBody:[.72,.78,.88], robotEye:[.30,.92,1.0]
 };
 function gxShapePoint(kind,i,n){
   const GA=Math.PI*(3-Math.sqrt(5));
@@ -2944,18 +2952,293 @@ function gxShapePoint(kind,i,n){
       }]
     ]);
   }
-  case 15:{                                   /* 月亮：球体挖掉一个偏移的球 */
-    for (let k=0;k<24;k++){
-      const u=Math.random()*2-1,th=Math.random()*6.283,s=Math.sqrt(Math.max(0,1-u*u));
-      const R=6.8;
-      let x=s*Math.cos(th)*R, y=u*R, z=s*Math.sin(th)*R;
-      const shell=Math.random()<.72?1:Math.cbrt(Math.random());
-      x*=shell; y*=shell; z*=shell;
-      if (Math.hypot(x-4.3,y-1.1,z)<5.6) continue;         /* 咬掉一口 */
-      const crater=Math.random()<.10;
-      return {p:[x,y,z],c:crater?C.crater:(Math.random()<.7?C.moon:C.gold)};
-    }
-    return {p:[0,0,0],c:C.moon};
+  case 15:{                                   /* 香蕉：沿弧线扫一个渐变粗细的管 */
+    const t=Math.random();
+    const a=-1.05+t*2.10, R=7.4;
+    const cx=Math.cos(a)*R, cy=Math.sin(a)*R+1.2;
+    const thick=1.45*Math.pow(Math.sin(Math.PI*t),0.42);
+    const ph=Math.random()*6.283, rr=thick*Math.sqrt(Math.random());
+    const nx=Math.cos(a+1.5708), ny=Math.sin(a+1.5708);
+    const tipEnd=(t<.06||t>.94);
+    return {p:[cx+nx*Math.cos(ph)*rr, cy+ny*Math.cos(ph)*rr, Math.sin(ph)*rr],
+      c:tipEnd?C.brown:(Math.random()<.86?C.banana:C.bananaDark)};
+  }
+  case 16:{                                   /* 书包 */
+    return pickPart([
+      [34,()=>boxPt(0,-0.4,0,7.6,8.4,3.8,C.bagBody)],       /* 包体 */
+      [14,()=>{                                             /* 翻盖 */
+        const t=Math.random();
+        return {p:[rnd(-3.8,3.8), 3.6-t*2.0, 1.9+t*0.5],c:C.bagFlap};
+      }],
+      [10,()=>boxPt(0,-2.6,2.05,4.6,3.0,.30,C.bagPocket)],  /* 前袋 */
+      [8,()=>{                                              /* 两条肩带 */
+        const side=Math.random()<.5?-1:1, t=Math.random();
+        const a=-1.2+t*2.4;
+        return {p:[side*2.7+rnd(-.3,.3), 3.4-t*7.2, -1.9-Math.sin(t*3.14)*1.5],c:C.bagStrap};
+      }],
+      [6,()=>{                                              /* 提手 */
+        const t=Math.random();
+        return {p:[Math.sin(t*3.14)*1.6, 4.3+Math.sin(t*3.14)*1.5, rnd(-.25,.25)],c:C.bagStrap};
+      }],
+      [6,()=>{                                              /* 搭扣 */
+        const side=Math.random()<.5?-1.6:1.6;
+        return {p:[side+rnd(-.35,.35), 1.5+rnd(-.35,.35), 2.05],c:C.gold};
+      }],
+      [6,()=>{                                              /* 拉链 */
+        return {p:[rnd(-2.3,2.3), -1.1+rnd(-.12,.12), 2.06],c:C.white};
+      }]
+    ]);
+  }
+  case 17:{                                   /* 圣诞老人（民俗形象，非注册角色） */
+    return pickPart([
+      [26,()=>spherePt(0,-2.6,0,3.5,C.santaRed)],           /* 红衣圆肚 */
+      [12,()=>spherePt(0,2.2,0,2.1,C.skin)],                /* 脸 */
+      [16,()=>{                                             /* 大白胡子 */
+        const u=Math.random()*2-1,th=Math.random()*6.283,s=Math.sqrt(Math.max(0,1-u*u));
+        const x=s*Math.cos(th)*2.3, y=u*2.3, z=s*Math.sin(th)*2.3;
+        if (y>0.6||z<0) return {p:[x,1.2+y*.9,z+1.0],c:C.white};
+        return {p:[x,1.1+y,z+0.9],c:C.white};
+      }],
+      [12,()=>{                                             /* 红帽子 */
+        const t=Math.sqrt(Math.random());
+        const r=2.1*(1-t), a=Math.random()*6.283;
+        return {p:[Math.cos(a)*r-t*1.2, 3.9+t*3.0, Math.sin(a)*r],c:C.santaRed};
+      }],
+      [6,()=>{                                              /* 帽檐 */
+        const a=Math.random()*6.283;
+        return {p:[Math.cos(a)*2.25,3.85+rnd(-.35,.35),Math.sin(a)*2.25],c:C.white};
+      }],
+      [4,()=>spherePt(-3.4,6.6,0,.85,C.white)],             /* 绒球 */
+      [8,()=>{                                              /* 腰带 */
+        const a=Math.random()*6.283;
+        return {p:[Math.cos(a)*3.4,-2.9+rnd(-.42,.42),Math.sin(a)*3.4],c:C.beltBlack};
+      }],
+      [4,()=>boxPt(0,-2.9,3.3,1.5,1.5,.3,C.gold)],          /* 金扣 */
+      [8,()=>{                                              /* 手臂 */
+        const side=Math.random()<.5?-1:1;
+        return cylPt(side*3.4,-1.8,0,.85,3.0,'y',C.santaRed);
+      }],
+      [4,()=>{                                              /* 靴子 */
+        const side=Math.random()<.5?-1.6:1.6;
+        return spherePt(side,-6.2,.5,1.15,C.beltBlack);
+      }]
+    ]);
+  }
+  case 18:{                                   /* 小猫 */
+    return pickPart([
+      [24,()=>spherePt(0,-2.4,0,3.1,C.catOrange)],          /* 身体 */
+      [22,()=>spherePt(0,1.9,0,2.6,C.catOrange)],           /* 头 */
+      [10,()=>{                                             /* 三角耳 */
+        const side=Math.random()<.5?-1:1, t=Math.random();
+        const w=1.25*(1-t);
+        return {p:[side*1.5+rnd(-w,w), 3.9+t*2.0, rnd(-.35,.35)],
+          c:t>.45?C.catPink:C.catOrange};
+      }],
+      [8,()=>{                                              /* 白肚皮 */
+        const u=Math.random()*2-1,th=Math.random()*6.283,s=Math.sqrt(Math.max(0,1-u*u));
+        return {p:[s*Math.cos(th)*1.9, -2.6+u*1.9, 2.0+s*Math.sin(th)*.6],c:C.white};
+      }],
+      [8,()=>{                                              /* 尾巴 */
+        const t=Math.random(), a=t*2.6;
+        return {p:[3.0+Math.sin(a)*2.6, -3.6+t*3.6, rnd(-.4,.4)],c:C.catOrange};
+      }],
+      [6,()=>{                                              /* 眼睛 */
+        const side=Math.random()<.5?-1:1;
+        return spherePt(side*1.0,2.3,2.35,.42,C.beltBlack);
+      }],
+      [3,()=>spherePt(0,1.4,2.55,.32,C.catPink)],           /* 鼻子 */
+      [5,()=>{                                              /* 胡须 */
+        const side=Math.random()<.5?-1:1, t=Math.random();
+        return {p:[side*(1.0+t*2.6), 1.3+rnd(-.5,.5), 2.1],c:C.white};
+      }],
+      [6,()=>{                                              /* 爪子 */
+        const side=Math.random()<.5?-1.5:1.5;
+        return spherePt(side,-5.0,1.5,.85,C.white);
+      }],
+      [4,()=>{                                              /* 条纹 */
+        const t=Math.random();
+        return {p:[rnd(-2.4,2.4), 2.6+t*1.2, 2.0],c:C.catDark};
+      }]
+    ]);
+  }
+  case 19:{                                   /* 小鸭 */
+    return pickPart([
+      [34,()=>spherePt(0,-2.0,0,3.6,C.duckYellow,0.86)],    /* 身体 */
+      [22,()=>spherePt(0,2.6,0.4,2.4,C.duckYellow)],        /* 头 */
+      [8,()=>{                                              /* 扁嘴 */
+        const t=Math.random();
+        return {p:[rnd(-1.0,1.0), 2.1+rnd(-.28,.28), 2.4+t*1.8],c:C.duckBeak};
+      }],
+      [6,()=>{                                              /* 眼睛 */
+        const side=Math.random()<.5?-1:1;
+        return spherePt(side*0.95,3.1,2.0,.34,C.beltBlack);
+      }],
+      [10,()=>{                                             /* 翅膀 */
+        const side=Math.random()<.5?-1:1, t=Math.random();
+        return {p:[side*(3.0+t*.8), -1.6+rnd(-1.4,1.4), rnd(-1.2,1.2)],c:C.duckWing};
+      }],
+      [6,()=>{                                              /* 尾巴 */
+        const t=Math.random();
+        return {p:[rnd(-1.1,1.1), -0.4+t*1.6, -3.4-t*1.4],c:C.duckYellow};
+      }],
+      [6,()=>{                                              /* 脚蹼 */
+        const side=Math.random()<.5?-1.3:1.3;
+        return {p:[side+rnd(-.9,.9), -5.6, rnd(-.2,1.6)],c:C.duckBeak};
+      }]
+    ]);
+  }
+  case 20:{                                   /* 熊猫 */
+    return pickPart([
+      [26,()=>spherePt(0,-2.4,0,3.4,C.white)],              /* 身体 */
+      [22,()=>spherePt(0,2.4,0,2.8,C.white)],               /* 头 */
+      [8,()=>{                                              /* 黑耳朵 */
+        const side=Math.random()<.5?-1:1;
+        return spherePt(side*2.1,4.5,0,1.05,C.beltBlack);
+      }],
+      [10,()=>{                                             /* 黑眼圈 */
+        const side=Math.random()<.5?-1:1;
+        const u=Math.random()*2-1,th=Math.random()*6.283,s=Math.sqrt(Math.max(0,1-u*u));
+        return {p:[side*1.15+s*Math.cos(th)*.85, 2.7+u*.95, 2.15+s*Math.sin(th)*.35],c:C.beltBlack};
+      }],
+      [4,()=>spherePt(0,1.7,2.7,.42,C.beltBlack)],          /* 鼻子 */
+      [14,()=>{                                             /* 四肢 */
+        const arm=Math.random()<.5;
+        const side=Math.random()<.5?-1:1;
+        return arm? spherePt(side*3.1,-1.6,.6,1.15,C.beltBlack)
+                  : spherePt(side*1.7,-5.4,.8,1.25,C.beltBlack);
+      }],
+      [4,()=>{                                              /* 竹叶 */
+        const t=Math.random();
+        return {p:[3.6+t*2.2, -0.6+t*1.8, 1.2+rnd(-.5,.5)],c:C.green};
+      }]
+    ]);
+  }
+  case 21:{                                   /* 企鹅 */
+    return pickPart([
+      [34,()=>spherePt(0,-1.4,0,3.5,C.beltBlack,1.24)],     /* 黑身 */
+      [16,()=>{                                             /* 白肚 */
+        const u=Math.random()*2-1,th=Math.random()*6.283,s=Math.sqrt(Math.max(0,1-u*u));
+        return {p:[s*Math.cos(th)*2.2, -1.4+u*3.2, 1.6+s*Math.sin(th)*.9],c:C.white};
+      }],
+      [14,()=>spherePt(0,3.4,0,2.3,C.beltBlack)],           /* 头 */
+      [7,()=>{                                              /* 白脸 */
+        const u=Math.random()*2-1,th=Math.random()*6.283,s=Math.sqrt(Math.max(0,1-u*u));
+        return {p:[s*Math.cos(th)*1.5, 3.2+u*1.5, 1.5+s*Math.sin(th)*.5],c:C.white};
+      }],
+      [5,()=>{                                              /* 橙喙 */
+        const t=Math.random();
+        return {p:[rnd(-.55,.55)*(1-t), 3.1+rnd(-.3,.3), 2.0+t*1.5],c:C.duckBeak};
+      }],
+      [5,()=>{                                              /* 眼睛 */
+        const side=Math.random()<.5?-1:1;
+        return spherePt(side*.85,3.9,1.85,.28,C.white);
+      }],
+      [10,()=>{                                             /* 鳍 */
+        const side=Math.random()<.5?-1:1, t=Math.random();
+        return {p:[side*(3.2+t*.7), -1.0-t*2.4, rnd(-.5,.5)],c:C.beltBlack};
+      }],
+      [6,()=>{                                              /* 橙脚 */
+        const side=Math.random()<.5?-1.3:1.3;
+        return {p:[side+rnd(-.8,.8), -5.2, rnd(-.2,1.5)],c:C.duckBeak};
+      }]
+    ]);
+  }
+  case 22:{                                   /* 机器人 */
+    return pickPart([
+      [22,()=>boxPt(0,2.9,0,4.4,3.6,3.4,C.robotBody)],      /* 方头 */
+      [26,()=>boxPt(0,-1.8,0,5.6,5.4,3.8,C.robotBody)],     /* 身体 */
+      [8,()=>{                                              /* 眼睛 */
+        const side=Math.random()<.5?-1:1;
+        return spherePt(side*1.15,3.1,1.75,.55,C.robotEye);
+      }],
+      [4,()=>{                                              /* 嘴：一排格栅 */
+        return {p:[rnd(-1.3,1.3), 1.7+rnd(-.12,.12), 1.75],c:C.robotEye};
+      }],
+      [5,()=>{                                              /* 天线 */
+        const t=Math.random();
+        return t<.75? {p:[rnd(-.16,.16), 4.8+t*2.0, rnd(-.16,.16)],c:C.grey}
+                    : spherePt(0,7.0,0,.55,C.red);
+      }],
+      [14,()=>{                                             /* 手臂 */
+        const side=Math.random()<.5?-1:1;
+        return cylPt(side*3.9,-1.6,0,.72,4.6,'y',C.grey);
+      }],
+      [6,()=>{                                              /* 手掌 */
+        const side=Math.random()<.5?-1:1;
+        return spherePt(side*3.9,-4.3,0,.95,C.robotEye);
+      }],
+      [12,()=>{                                             /* 腿 */
+        const side=Math.random()<.5?-1.6:1.6;
+        return cylPt(side,-6.2,0,.85,3.4,'y',C.grey);
+      }],
+      [5,()=>boxPt(0,-1.4,1.95,2.6,1.8,.25,C.robotEye)]     /* 胸口面板 */
+    ]);
+  }
+  case 23:{                                   /* 雪人 */
+    return pickPart([
+      [30,()=>spherePt(0,-4.2,0,3.4,C.white)],              /* 下球 */
+      [24,()=>spherePt(0,0.2,0,2.6,C.white)],               /* 中球 */
+      [18,()=>spherePt(0,3.9,0,1.9,C.white)],               /* 头 */
+      [4,()=>{                                              /* 胡萝卜鼻 */
+        const t=Math.random();
+        return {p:[rnd(-.28,.28)*(1-t), 3.8+rnd(-.2,.2)*(1-t), 1.7+t*1.7],c:C.duckBeak};
+      }],
+      [4,()=>{                                              /* 眼睛 */
+        const side=Math.random()<.5?-1:1;
+        return spherePt(side*.72,4.4,1.55,.26,C.beltBlack);
+      }],
+      [4,()=>{                                              /* 纽扣 */
+        const k=Math.floor(Math.random()*3);
+        return spherePt(0,0.9-k*1.2,2.4,.3,C.beltBlack);
+      }],
+      [8,()=>{                                              /* 树枝手臂 */
+        const side=Math.random()<.5?-1:1, t=Math.random();
+        return {p:[side*(2.6+t*3.0), 0.6+t*1.6+rnd(-.2,.2), rnd(-.2,.2)],c:C.brown};
+      }],
+      [6,()=>{                                              /* 礼帽 */
+        const t=Math.random();
+        return t<.35? {p:[rnd(-2.3,2.3), 5.6, rnd(-2.3,2.3)],c:C.beltBlack}
+                    : {p:[rnd(-1.5,1.5), 5.7+Math.random()*2.0, rnd(-1.5,1.5)],c:C.beltBlack};
+      }],
+      [6,()=>{                                              /* 围巾 */
+        const a=Math.random()*6.283;
+        return Math.random()<.7
+          ? {p:[Math.cos(a)*2.05, 2.0+rnd(-.4,.4), Math.sin(a)*2.05],c:C.red}
+          : {p:[1.9+rnd(-.35,.35), 1.8-Math.random()*2.6, .8],c:C.red};
+      }]
+    ]);
+  }
+  case 24:{                                   /* 兔子 */
+    return pickPart([
+      [28,()=>spherePt(0,-2.4,0,3.2,C.white)],              /* 身体 */
+      [20,()=>spherePt(0,1.9,0.2,2.4,C.white)],             /* 头 */
+      [16,()=>{                                             /* 长耳朵 */
+        const side=Math.random()<.5?-1:1, t=Math.random();
+        const w=.75*(1-t*.45);
+        const inner=Math.random()<.34;
+        return {p:[side*(0.95+t*0.7)+rnd(-w,w)*(inner?.45:1), 3.8+t*5.0, rnd(-.35,.35)],
+          c:inner?C.catPink:C.white};
+      }],
+      [6,()=>{                                              /* 眼睛 */
+        const side=Math.random()<.5?-1:1;
+        return spherePt(side*.95,2.2,1.95,.32,C.beltBlack);
+      }],
+      [3,()=>spherePt(0,1.4,2.25,.28,C.catPink)],           /* 鼻子 */
+      [5,()=>{                                              /* 尾巴绒球 */
+        return spherePt(0,-3.0,-3.2,1.05,C.white);
+      }],
+      [12,()=>{                                             /* 前后腿 */
+        const front=Math.random()<.5;
+        const side=Math.random()<.5?-1:1;
+        return front? spherePt(side*1.5,-4.6,1.6,1.0,C.white)
+                    : spherePt(side*2.5,-3.6,-0.4,1.3,C.white);
+      }],
+      [4,()=>{                                              /* 胡萝卜 */
+        const t=Math.random();
+        return t<.78? {p:[3.4+t*2.0, -4.4+rnd(-.4,.4)*(1-t), 1.4],c:C.duckBeak}
+                    : {p:[5.6+rnd(-.5,.5), -3.4+Math.random()*1.4, 1.4],c:C.green};
+      }]
+    ]);
   }
   default:
     return {p:[0,0,0],c:C.white};
@@ -3081,6 +3364,22 @@ function gxResize(){
   GX.uni.uScale.value=h*DPR*0.5;
   GX.needClear=true;
 }
+let shapeBag=[];
+function nextShapeIdx(){
+  if (!shapeBag.length){
+    shapeBag=[];
+    for (let i=0;i<SHAPE_N;i++) shapeBag.push(i);
+    for (let i=shapeBag.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      const t=shapeBag[i]; shapeBag[i]=shapeBag[j]; shapeBag[j]=t;
+    }
+  }
+  let n=shapeBag.pop();
+  if (n===gxShapeIdx&&shapeBag.length){        /* 别连着抽到同一个 */
+    const m=shapeBag.pop(); shapeBag.push(n); n=m;
+  }
+  return n;
+}
 function gxGetShape(k){
   if (!GX.shapes[k]) GX.shapes[k]=gxBuildShape(k,GX_N);
   return GX.shapes[k];
@@ -3143,7 +3442,7 @@ const gxCv=document.getElementById('galaxy');
 gxCv.addEventListener('pointerdown',e=>{
   audio(); gxDrag=true; gxLX=e.clientX; gxLY=e.clientY;
   const now=performance.now();
-  if (now-gxLastTap<330) gxSetShape((gxShapeIdx+1)%SHAPE_N);
+  if (now-gxLastTap<330) gxSetShape(nextShapeIdx());
   gxLastTap=now;
   try{ gxCv.setPointerCapture(e.pointerId); }catch(err){}
 });
@@ -3358,7 +3657,7 @@ function camLoop(now){
     else if (gest)          { gxSpreadT=0.22; gxSwirlT=0.15; }
     if (twoDist>0) gxDistT=Math.max(13,Math.min(58,50-twoDist*54));
     if (gest==='victory'&&gestPrevStable!=='victory'&&now-shapeCool>900){
-      shapeCool=now; gxSetShape((gxShapeIdx+1)%SHAPE_N);
+      shapeCool=now; gxSetShape(nextShapeIdx());
     }
     if (gest==='thumb'&&gestPrevStable!=='thumb'&&now-burstCool>1200){
       burstCool=now; gxBoom(); gxShout('爆发');
@@ -3492,204 +3791,225 @@ document.addEventListener('click',e=>{
   if (!isUI(e.target)) closePanels();
 });
 /* =========================================================
-   ★ 解压药板 ★
-   护士本行的解压神器：一整板泡罩，一颗一颗按爆
+   ★ 元气糖果罐 ★
+   真物理沙盒：点哪掉哪，糖果会堆叠、滚动、被拖着甩出去
    ========================================================= */
-const popCv=document.getElementById('popCv');
-const popTipEl=document.getElementById('popTip'),popDoneEl=document.getElementById('popDone');
-const popAgainBtn=document.getElementById('popAgain');
-let popCells=[],popCols=5,popRows=8,popCellW=0,popCellH=0,popOX=0,popOY=0;
-let popDoneCount=0,popCombo=0,popComboT=0,popParts=[],popFloats=[],popFinished=false,popShake=0;
-const POP_WORDS=['深呼吸','不着急','喝口水','坐一会儿','肩膀放松','别硬扛','你已经很好了','慢一点',
-  '揉揉眼睛','伸个懒腰','够了就停','今天辛苦了','歇会儿','先吃饭','别急着回消息','脖子转两圈'];
-const POP_HUES=[344,20,48,150,196,268,318];
+const jarCv=document.getElementById('jarCv');
+const jarTipEl=document.getElementById('jarTip'),jarCountEl=document.getElementById('jarCount');
+const jarStirBtn=document.getElementById('jarStir'),jarClearBtn=document.getElementById('jarClear');
+const JAR_MAX=MOBILE?110:190;
+let candies=[],jarL=0,jarR=0,jarB=0,jarT=0,jarRad=0;
+let jarGrab=null,jarPX=0,jarPY=0,jarSpawnT=0,jarClink=0,jarShake=0;
+const JAR_HUES=[344,14,40,58,150,190,262,318];
 
-function popInit(){
-  L.pop.fit();
-  const {w,h}=L.pop;
-  const ar=w/h;
-  popCols=ar>1.15?8:5;
-  popRows=ar>1.15?5:8;
-  const padX=w*0.10, padY=h*0.16;
-  const availW=w-padX*2, availH=h-padY*2;
-  popCellW=availW/popCols; popCellH=availH/popRows;
-  popOX=padX; popOY=padY;
-  popCells=[];
-  for (let r=0;r<popRows;r++) for (let c=0;c<popCols;c++){
-    popCells.push({c:c,r:r,popped:false,t:0,
-      hue:POP_HUES[Math.floor(Math.random()*POP_HUES.length)],
-      tear:Array.from({length:9},()=>0.62+Math.random()*0.34)});
-  }
-  popDoneCount=0; popCombo=0; popComboT=0;
-  popParts=[]; popFloats=[]; popFinished=false; popShake=0;
-  popTipEl.style.opacity=1;
-  popDoneEl.classList.remove('on');
+function jarInit(){
+  L.jar.fit();
+  const {w,h}=L.jar;
+  jarL=w*0.13; jarR=w*0.87; jarT=h*0.20; jarB=h*0.88;
+  jarRad=Math.min(w,h)*0.030;
+  candies=[]; jarGrab=null; jarShake=0;
+  /* 先铺一层底，进来就有东西可玩 */
+  for (let i=0;i<(MOBILE?46:78);i++)
+    jarAdd(jarL+jarRad*2+Math.random()*(jarR-jarL-jarRad*4), jarT+Math.random()*(jarB-jarT)*.7, true);
+  jarTipEl.style.opacity=1;
+  jarUpd();
 }
-function popSound(k){
+function jarAdd(x,y,quiet){
+  if (candies.length>=JAR_MAX) return;
+  const r=jarRad*(0.72+Math.random()*0.62);
+  candies.push({x:x,y:y,px:x-(Math.random()-.5)*1.2,py:y,r:r,
+    hue:JAR_HUES[Math.floor(Math.random()*JAR_HUES.length)],
+    rot:Math.random()*6.283,star:Math.random()<.16});
+  if (!quiet) jarUpd();
+}
+function jarUpd(){ jarCountEl.textContent=candies.length+' / '+JAR_MAX; }
+function clink(v){
+  const now=performance.now();
+  if (now-jarClink<45) return;
+  jarClink=now;
   const ac=audio(),T=ac.currentTime;
-  const f=430+Math.min(k,18)*34+Math.random()*50;
-  const o=ac.createOscillator(); o.type='sine';
-  o.frequency.setValueAtTime(f*1.7,T);
-  o.frequency.exponentialRampToValueAtTime(f*.52,T+.055);
+  const o=ac.createOscillator(); o.type='triangle';
+  o.frequency.value=760+Math.random()*820;
   const g=ac.createGain();
   g.gain.setValueAtTime(.0001,T);
-  g.gain.exponentialRampToValueAtTime(.20,T+.004);
-  g.gain.exponentialRampToValueAtTime(.0001,T+.10);
-  o.connect(g); g.connect(sfxGain); o.start(T); o.stop(T+.13);
-  /* 一点脆响，像塑料裂开 */
-  const len=Math.floor(ac.sampleRate*.045);
-  const b=ac.createBuffer(1,len,ac.sampleRate); const d=b.getChannelData(0);
-  for (let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,7);
-  const s=ac.createBufferSource(); s.buffer=b;
-  const bp=ac.createBiquadFilter(); bp.type='bandpass';
-  bp.frequency.value=2100+Math.min(k,18)*70; bp.Q.value=1.3;
-  const ng=ac.createGain(); ng.gain.value=.14;
-  s.connect(bp); bp.connect(ng); ng.connect(sfxGain); s.start(T); s.stop(T+.05);
+  g.gain.exponentialRampToValueAtTime(Math.min(.085,.012+v*.030),T+.004);
+  g.gain.exponentialRampToValueAtTime(.0001,T+.085);
+  const hp=ac.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=500;
+  o.connect(g); g.connect(hp); hp.connect(sfxGain);
+  o.start(T); o.stop(T+.10);
 }
-function popCellAt(x,y){
-  const c=Math.floor((x-popOX)/popCellW), r=Math.floor((y-popOY)/popCellH);
-  if (c<0||r<0||c>=popCols||r>=popRows) return null;
-  return popCells[r*popCols+c]||null;
-}
-function popDo(x,y){
-  const cell=popCellAt(x,y);
-  if (!cell||cell.popped) return;
-  const cx=popOX+(cell.c+.5)*popCellW, cy=popOY+(cell.r+.5)*popCellH;
-  const R=Math.min(popCellW,popCellH)*.40;
-  if (Math.hypot(x-cx,y-cy)>R*1.12) return;
-  cell.popped=true; cell.t=0;
-  popDoneCount++;
-  const now=performance.now();
-  popCombo=(now-popComboT<620)?popCombo+1:1;
-  popComboT=now;
-  popSound(popCombo);
-  if (navigator.vibrate) { try{ navigator.vibrate(11); }catch(e){} }
-  for (let i=0;i<12;i++){
-    const a=Math.random()*6.283,v=.8+Math.random()*3.2;
-    popParts.push({x:cx,y:cy,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1.0,
-      life:1,dec:.020+Math.random()*.020,r:1.2+Math.random()*2.4,hue:cell.hue});
+function jarStep(dt){
+  const g=0.42, damp=0.992;
+  /* Verlet 积分 */
+  for (const c of candies){
+    if (c===jarGrab) continue;
+    const vx=(c.x-c.px)*damp, vy=(c.y-c.py)*damp;
+    c.px=c.x; c.py=c.y;
+    c.x+=vx; c.y+=vy+g;
+    c.rot+=vx*0.05;
   }
-  popFloats.push({x:cx,y:cy,txt:POP_WORDS[Math.floor(Math.random()*POP_WORDS.length)],
-    life:1,vy:-.55-Math.random()*.35});
-  popShake=Math.min(4,popShake+1.6);
-  if (popDoneCount>=popCells.length&&!popFinished){
-    popFinished=true;
-    popTipEl.style.opacity=0;
-    popDoneEl.classList.add('on');
-    setTimeout(()=>{ confettiBurst(); sparkleUp(); },260);
+  /* 碰撞用空间网格，不然 190 颗要两万次比较 */
+  const cell=jarRad*2.6;
+  const grid=new Map();
+  const key=(i,j)=>i+','+j;
+  for (let i=0;i<candies.length;i++){
+    const c=candies[i];
+    const k=key(Math.floor(c.x/cell),Math.floor(c.y/cell));
+    if (!grid.has(k)) grid.set(k,[]);
+    grid.get(k).push(i);
   }
-}
-function drawPop(dt){
-  const {x:ctx,w,h}=L.pop;
-  popShake*=.86;
-  const sx=(Math.random()-.5)*popShake, sy=(Math.random()-.5)*popShake;
-  /* 暖白底 */
-  const bg=ctx.createLinearGradient(0,0,0,h);
-  bg.addColorStop(0,'#fdf3f0'); bg.addColorStop(.55,'#f7e9ec'); bg.addColorStop(1,'#efdfe6');
-  ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
-  const vg=ctx.createRadialGradient(w/2,h*.46,Math.min(w,h)*.25,w/2,h*.46,Math.max(w,h)*.72);
-  vg.addColorStop(0,'rgba(255,255,255,.35)'); vg.addColorStop(1,'rgba(180,140,160,.16)');
-  ctx.fillStyle=vg; ctx.fillRect(0,0,w,h);
-
-  ctx.save(); ctx.translate(sx,sy);
-  /* 铝塑板底 */
-  const bx=popOX-popCellW*.34, by=popOY-popCellH*.40;
-  const bw=popCellW*popCols+popCellW*.68, bh=popCellH*popRows+popCellH*.80;
-  const pg=ctx.createLinearGradient(bx,by,bx+bw,by+bh);
-  pg.addColorStop(0,'#f2f5f9'); pg.addColorStop(.35,'#dfe6ef');
-  pg.addColorStop(.6,'#eef2f7'); pg.addColorStop(1,'#d3dae5');
-  ctx.fillStyle=pg;
-  ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,Math.min(bw,bh)*.06); ctx.fill();
-  ctx.strokeStyle='rgba(150,165,185,.7)'; ctx.lineWidth=1.4; ctx.stroke();
-  /* 板上的印字 */
-  ctx.fillStyle='rgba(140,60,95,.42)';
-  ctx.font='600 '+Math.max(9,Math.min(w*.026,13))+'px system-ui,sans-serif';
-  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
-  ctx.fillText('元气补给片 · 一日一板 · 阳阳专用',bx+bw*.05,by+bh+Math.max(14,bh*.045));
-  ctx.textAlign='right';
-  ctx.fillText(popDoneCount+' / '+popCells.length,bx+bw*.95,by+bh+Math.max(14,bh*.045));
-
-  /* 泡罩 */
-  const R=Math.min(popCellW,popCellH)*.40;
-  for (const cell of popCells){
-    const cx=popOX+(cell.c+.5)*popCellW, cy=popOY+(cell.r+.5)*popCellH;
-    if (!cell.popped){
-      ctx.fillStyle='rgba(120,140,165,.20)';
-      ctx.beginPath(); ctx.ellipse(cx,cy+R*.18,R*.98,R*.92,0,0,6.283); ctx.fill();
-      const g=ctx.createRadialGradient(cx-R*.32,cy-R*.36,R*.05,cx,cy,R);
-      g.addColorStop(0,'hsla('+cell.hue+',92%,95%,.99)');
-      g.addColorStop(.42,'hsl('+cell.hue+',80%,74%)');
-      g.addColorStop(.86,'hsl('+cell.hue+',72%,55%)');
-      g.addColorStop(1,'hsl('+cell.hue+',62%,46%)');
-      ctx.fillStyle=g;
-      ctx.beginPath(); ctx.arc(cx,cy,R,0,6.283); ctx.fill();
-      ctx.fillStyle='rgba(255,255,255,.68)';
-      ctx.beginPath(); ctx.ellipse(cx-R*.30,cy-R*.34,R*.26,R*.17,-0.7,0,6.283); ctx.fill();
-    } else {
-      cell.t=Math.min(1,cell.t+dt/220);
-      /* 破口 */
-      ctx.fillStyle='rgba(72,84,102,.55)';
-      ctx.beginPath(); ctx.arc(cx,cy,R*.86,0,6.283); ctx.fill();
-      /* 撕开的铝箔 */
-      ctx.fillStyle='rgba(226,232,240,.95)';
-      ctx.beginPath();
-      for (let i=0;i<9;i++){
-        const a=i/9*6.283;
-        const rr=R*cell.tear[i]*(1+(1-cell.t)*.5);
-        const px=cx+Math.cos(a)*rr, py=cy+Math.sin(a)*rr;
-        i?ctx.lineTo(px,py):ctx.moveTo(px,py);
+  for (let iter=0;iter<4;iter++){
+    for (let i=0;i<candies.length;i++){
+      const a=candies[i];
+      const gi=Math.floor(a.x/cell), gj=Math.floor(a.y/cell);
+      for (let di=-1;di<=1;di++) for (let dj=-1;dj<=1;dj++){
+        const list=grid.get(key(gi+di,gj+dj));
+        if (!list) continue;
+        for (const j of list){
+          if (j<=i) continue;
+          const b=candies[j];
+          let dx=b.x-a.x, dy=b.y-a.y;
+          let d2=dx*dx+dy*dy;
+          const md=a.r+b.r;
+          if (d2>=md*md||d2<1e-6) continue;
+          const d=Math.sqrt(d2);
+          const push=(md-d)/d*0.5;
+          const ox=dx*push, oy=dy*push;
+          if (a!==jarGrab){ a.x-=ox; a.y-=oy; }
+          if (b!==jarGrab){ b.x+=ox; b.y+=oy; }
+          if (iter===0){
+            const rel=Math.abs((a.x-a.px)-(b.x-b.px))+Math.abs((a.y-a.py)-(b.y-b.py));
+            if (rel>2.6) clink(rel*.2);
+          }
+        }
       }
-      ctx.closePath();
-      ctx.globalCompositeOperation='destination-out';
-      ctx.fill();
-      ctx.globalCompositeOperation='source-over';
-      ctx.strokeStyle='rgba(196,206,222,.9)'; ctx.lineWidth=1.6;
-      ctx.beginPath();
-      for (let i=0;i<9;i++){
-        const a=i/9*6.283;
-        const rr=R*cell.tear[i]*(1+(1-cell.t)*.5);
-        const px=cx+Math.cos(a)*rr, py=cy+Math.sin(a)*rr;
-        i?ctx.lineTo(px,py):ctx.moveTo(px,py);
+    }
+    /* 罐壁约束 */
+    for (const c of candies){
+      if (c===jarGrab) continue;
+      if (c.x-c.r<jarL){ c.x=jarL+c.r; c.px=c.x+(c.px-c.x)*-.42; }
+      if (c.x+c.r>jarR){ c.x=jarR-c.r; c.px=c.x+(c.px-c.x)*-.42; }
+      if (c.y+c.r>jarB){
+        if (c.y-c.py>3.2) clink((c.y-c.py)*.16);
+        c.y=jarB-c.r; c.py=c.y+(c.py-c.y)*-.34;
+        c.px=c.x+(c.px-c.x)*.86;                  /* 地面摩擦 */
       }
-      ctx.closePath(); ctx.stroke();
+      if (c.y-c.r<jarT-jarRad*6) c.y=jarT-jarRad*6+c.r;
     }
   }
-  /* 碎屑 */
-  for (let i=popParts.length-1;i>=0;i--){
-    const p=popParts[i];
-    p.x+=p.vx; p.y+=p.vy; p.vy+=.16; p.vx*=.99; p.life-=p.dec;
-    if (p.life<=0){ popParts.splice(i,1); continue; }
-    ctx.globalAlpha=p.life;
-    ctx.fillStyle='hsl('+p.hue+',85%,'+(58+p.life*22)+'%)';
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.r*p.life,0,6.283); ctx.fill();
+  if (jarShake>0.02){
+    for (const c of candies){
+      c.px-=(Math.random()-.5)*jarShake*1.6;
+      c.py-=(Math.random()-.5)*jarShake*1.2;
+    }
+    jarShake*=.90;
   }
-  ctx.globalAlpha=1;
-  /* 飘字 */
-  ctx.textAlign='center';
-  for (let i=popFloats.length-1;i>=0;i--){
-    const f=popFloats[i];
-    f.y+=f.vy; f.life-=.011;
-    if (f.life<=0){ popFloats.splice(i,1); continue; }
-    ctx.globalAlpha=Math.min(1,f.life*1.6);
-    ctx.font='600 '+Math.max(12,Math.min(w*.036,17))+'px system-ui,sans-serif';
-    ctx.fillStyle='rgba(168,54,95,.92)';
-    ctx.fillText(f.txt,f.x,f.y);
-  }
-  ctx.globalAlpha=1;
-  ctx.restore();
 }
-let popDragging=false;
-popCv.addEventListener('pointerdown',e=>{
-  e.stopPropagation(); audio(); popDragging=true;
-  const r=popCv.getBoundingClientRect(); popDo(e.clientX-r.left,e.clientY-r.top);
+function drawJar(dt){
+  const {x:ctx,w,h}=L.jar;
+  jarStep(dt);
+  /* 背景 */
+  const bg=ctx.createLinearGradient(0,0,0,h);
+  bg.addColorStop(0,'#fdf4ef'); bg.addColorStop(.55,'#f8e9ea'); bg.addColorStop(1,'#efdde4');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
+  const vg=ctx.createRadialGradient(w/2,h*.46,Math.min(w,h)*.2,w/2,h*.46,Math.max(w,h)*.7);
+  vg.addColorStop(0,'rgba(255,255,255,.4)'); vg.addColorStop(1,'rgba(185,145,165,.18)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,w,h);
+
+  /* 罐子（后层玻璃） */
+  const gw=jarR-jarL, gh=jarB-jarT, rr=Math.min(gw,gh)*.14;
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(jarL-6,jarT-6,gw+12,gh+12,[rr*.5,rr*.5,rr,rr]);
+  const jg=ctx.createLinearGradient(jarL,0,jarR,0);
+  jg.addColorStop(0,'rgba(255,255,255,.55)');
+  jg.addColorStop(.28,'rgba(226,240,248,.30)');
+  jg.addColorStop(1,'rgba(200,220,235,.42)');
+  ctx.fillStyle=jg; ctx.fill();
+  ctx.restore();
+
+  /* 糖果 */
+  for (const c of candies){
+    const grd=ctx.createRadialGradient(c.x-c.r*.34,c.y-c.r*.38,c.r*.06,c.x,c.y,c.r);
+    grd.addColorStop(0,'hsla('+c.hue+',95%,94%,1)');
+    grd.addColorStop(.40,'hsl('+c.hue+',88%,72%)');
+    grd.addColorStop(.86,'hsl('+c.hue+',80%,54%)');
+    grd.addColorStop(1,'hsl('+c.hue+',70%,44%)');
+    ctx.fillStyle=grd;
+    ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,6.283); ctx.fill();
+    if (c.star){                                 /* 一部分做成小星星糖 */
+      ctx.save(); ctx.translate(c.x,c.y); ctx.rotate(c.rot);
+      ctx.fillStyle='rgba(255,255,255,.72)';
+      ctx.beginPath();
+      for (let i=0;i<10;i++){
+        const a=i*Math.PI/5, ra=(i%2)?c.r*.20:c.r*.48;
+        const px=Math.cos(a)*ra, py=Math.sin(a)*ra;
+        i?ctx.lineTo(px,py):ctx.moveTo(px,py);
+      }
+      ctx.closePath(); ctx.fill(); ctx.restore();
+    }
+    ctx.fillStyle='rgba(255,255,255,.66)';
+    ctx.beginPath(); ctx.ellipse(c.x-c.r*.32,c.y-c.r*.36,c.r*.26,c.r*.17,-0.7,0,6.283); ctx.fill();
+  }
+
+  /* 罐子前层高光 */
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(jarL-6,jarT-6,gw+12,gh+12,[rr*.5,rr*.5,rr,rr]);
+  ctx.strokeStyle='rgba(255,255,255,.85)'; ctx.lineWidth=3; ctx.stroke();
+  ctx.strokeStyle='rgba(150,175,200,.55)'; ctx.lineWidth=1.2; ctx.stroke();
+  ctx.clip();
+  const hl=ctx.createLinearGradient(jarL,0,jarL+gw*.22,0);
+  hl.addColorStop(0,'rgba(255,255,255,.55)'); hl.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=hl; ctx.fillRect(jarL-6,jarT-6,gw*.24,gh+12);
+  ctx.restore();
+  /* 罐口 */
+  ctx.fillStyle='rgba(226,236,246,.9)';
+  ctx.beginPath(); ctx.roundRect(jarL-16,jarT-22,gw+32,20,10); ctx.fill();
+  ctx.strokeStyle='rgba(150,175,200,.6)'; ctx.lineWidth=1.2; ctx.stroke();
+}
+function jarPick(x,y){
+  let best=null,bd=1e9;
+  for (const c of candies){
+    const d=Math.hypot(c.x-x,c.y-y);
+    if (d<c.r*1.5&&d<bd){ bd=d; best=c; }
+  }
+  return best;
+}
+let jarDragging=false;
+jarCv.addEventListener('pointerdown',e=>{
+  e.stopPropagation(); audio();
+  const r=jarCv.getBoundingClientRect();
+  const x=e.clientX-r.left,y=e.clientY-r.top;
+  jarDragging=true; jarPX=x; jarPY=y;
+  const hit=jarPick(x,y);
+  if (hit){ jarGrab=hit; }                       /* 抓住一颗 */
+  else { jarAdd(x,y); jarSpawnT=performance.now(); clink(1.2); }
 });
-popCv.addEventListener('pointermove',e=>{
-  if (!popDragging) return;
+jarCv.addEventListener('pointermove',e=>{
+  if (!jarDragging) return;
   e.stopPropagation();
-  const r=popCv.getBoundingClientRect(); popDo(e.clientX-r.left,e.clientY-r.top);
+  const r=jarCv.getBoundingClientRect();
+  const x=e.clientX-r.left,y=e.clientY-r.top;
+  if (jarGrab){
+    jarGrab.px=jarGrab.x; jarGrab.py=jarGrab.y;
+    jarGrab.x=Math.max(jarL+jarGrab.r,Math.min(jarR-jarGrab.r,x));
+    jarGrab.y=Math.min(jarB-jarGrab.r,y);
+  } else {
+    const now=performance.now();
+    if (now-jarSpawnT>60&&Math.hypot(x-jarPX,y-jarPY)>jarRad){
+      jarSpawnT=now; jarAdd(x,y);
+    }
+  }
+  jarPX=x; jarPY=y;
 });
-addEventListener('pointerup',()=>{ popDragging=false; });
-popAgainBtn.addEventListener('click',e=>{ e.stopPropagation(); popInit(); bell(523.25,.12,.7); });
+addEventListener('pointerup',()=>{ jarDragging=false; jarGrab=null; });
+jarStirBtn.addEventListener('click',e=>{
+  e.stopPropagation(); jarShake=7; clink(2.4);
+  for (const c of candies) c.py+=Math.random()*3;
+});
+jarClearBtn.addEventListener('click',e=>{
+  e.stopPropagation();
+  candies=[]; jarUpd(); bell(392,.10,.5);
+});
 const thermo=document.getElementById('thermo'),merc=document.getElementById('merc');
 const tempNum=document.getElementById('tempNum'),warmlight=document.getElementById('warmlight');
 const bandaid=document.getElementById('bandaid');
@@ -3744,7 +4064,7 @@ addEventListener('devicemotion',e=>{
 
 /* 按钮总线 */
 const ACTIONS={
-  pop(){ closePanels(); popInit(); openOv(popOv); },
+  jar(){ closePanels(); jarInit(); openOv(jarOv); },
   rose(){
     closePanels();
     document.body.classList.add('rose');
@@ -3812,7 +4132,7 @@ function loop(now){
   const dt=Math.min(now-last,50); last=now;
   const t=now/1000;
   if ((++actTick&7)===0) updateActive();
-  if (ovOpen===popOv) drawPop(dt);
+  if (ovOpen===jarOv) drawJar(dt);
   else if (ovOpen===roseOv) drawRose(dt);
   else if (ovOpen===monOv) drawMon(dt);
   else if (ovOpen===fogOv) drawFog(dt);
