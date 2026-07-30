@@ -2663,6 +2663,7 @@ let gxYaw=.5,gxPitch=-.22,gxYawV=.00010,gxPitchV=0,gxDist=26,gxDistT=26;
 let gxSpread=0,gxSpreadT=0,gxSwirl=0,gxSwirlT=0,gxWarm=0,gxWarmT=0,gxBurst=0;
 let gxHue=0,gxHueT=0,gxMix=1,gxShapeIdx=0,gxLastShape=0;
 const GX_N=MOBILE?14000:30000;
+const GX_MET=MOBILE?6:8;
 /* [gxShapePoint 里的 kind, 名字, 是否实体]
    实体形态：法线打光 + 深度遮挡，看着是个真东西；
    气态形态（星云/旋涡/星环/晶格）保留叠加发光和拖尾。
@@ -2677,6 +2678,32 @@ const SHAPE_NAMES=SHAPE_DEF.map(d=>d[1]);
 const SHAPE_KIND=SHAPE_DEF.map(d=>d[0]);
 const SHAPE_SOLID=SHAPE_DEF.map(d=>!!d[2]);
 const SHAPE_N=SHAPE_DEF.length;
+/* 每个形态配一套背景：[天顶色, 三团星云色]，随变形一起插值过去，
+   所以背景总是跟着当前形态的调子走，不会各说各话 */
+const SKY=[
+  [[.036,.021,.078],[.085,.031,.140],[.016,.062,.098],[.130,.034,.062]],  /* 星云 紫 */
+  [[.062,.012,.030],[.170,.020,.055],[.090,.014,.040],[.150,.030,.058]],  /* 心 玫红 */
+  [[.030,.020,.070],[.100,.040,.150],[.020,.070,.110],[.120,.050,.070]],  /* 旋涡 */
+  [[.014,.030,.062],[.020,.080,.130],[.060,.070,.130],[.020,.055,.090]],  /* 星环 冰蓝 */
+  [[.012,.026,.050],[.030,.070,.120],[.050,.080,.120],[.020,.050,.080]],  /* 晶格 */
+  [[.010,.034,.028],[.020,.090,.050],[.090,.030,.030],[.100,.075,.024]],  /* 圣诞树 */
+  [[.052,.014,.024],[.140,.030,.040],[.030,.050,.100],[.120,.060,.030]],  /* 汽车 */
+  [[.048,.030,.020],[.130,.070,.030],[.030,.045,.090],[.100,.050,.035]],  /* 房屋 暖灯 */
+  [[.054,.014,.024],[.150,.028,.042],[.030,.070,.040],[.110,.055,.028]],  /* 苹果 */
+  [[.052,.038,.012],[.140,.100,.030],[.040,.050,.100],[.120,.080,.024]],  /* 五角星 金 */
+  [[.050,.030,.034],[.130,.060,.070],[.040,.080,.090],[.120,.070,.045]],  /* 冰淇淋 */
+  [[.056,.018,.036],[.150,.035,.075],[.050,.060,.110],[.130,.045,.070]],  /* 棒棒糖 */
+  [[.020,.030,.062],[.040,.070,.140],[.090,.075,.030],[.030,.050,.100]],  /* 排球 */
+  [[.030,.034,.050],[.070,.060,.110],[.030,.070,.090],[.100,.045,.060]],  /* 针管 */
+  [[.046,.030,.022],[.120,.070,.035],[.040,.050,.080],[.100,.055,.030]],  /* 咖啡杯 */
+  [[.022,.030,.060],[.040,.065,.135],[.060,.070,.120],[.030,.050,.095]],  /* 书包 蓝 */
+  [[.054,.032,.018],[.145,.075,.028],[.040,.050,.090],[.115,.060,.032]],  /* 小猫 橘 */
+  [[.054,.042,.014],[.145,.105,.030],[.040,.060,.095],[.115,.080,.026]],  /* 小鸭 黄 */
+  [[.026,.028,.038],[.070,.070,.085],[.030,.075,.055],[.080,.060,.070]],  /* 熊猫 */
+  [[.016,.028,.056],[.030,.065,.130],[.080,.070,.035],[.025,.048,.095]],  /* 企鹅 冷 */
+  [[.020,.036,.054],[.035,.085,.125],[.060,.070,.115],[.028,.060,.100]],  /* 机器人 青 */
+  [[.024,.034,.058],[.045,.080,.135],[.070,.080,.120],[.030,.055,.100]],  /* 雪人 雪蓝 */
+  [[.050,.030,.038],[.130,.060,.080],[.040,.070,.090],[.115,.055,.065]]]; /* 兔子 */
 const gxShapeEl=document.getElementById('gxShape'),gxGestEl=document.getElementById('gxGest');
 const gxFaceEl=document.getElementById('gxFace'),gxCountEl=document.getElementById('gxCount');
 const gxShoutEl=document.getElementById('gxShout');
@@ -3350,54 +3377,66 @@ function initGalaxy(){
   const fadeMat=new THREE.ShaderMaterial({
     transparent:true,depthTest:false,depthWrite:false,
     uniforms:{uOp:{value:0.42},uT:{value:0},uAsp:{value:1},
-      uMet:{value:[new THREE.Vector4(),new THREE.Vector4(),new THREE.Vector4()]}},
+      uSky:{value:[new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3()]},
+      uMet:{value:Array.from({length:GX_MET},()=>new THREE.Vector4())},
+      uMetB:{value:Array.from({length:GX_MET},()=>new THREE.Vector4())}},
     vertexShader:'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.,1.); }',
-    /* 背景不再是一块死黑：深空底色 + 三团星云 + 稀疏星点 + 偶尔划过的流星 */
+    /* 背景配色由 uSky 给，随形态一起插值；再叠星点和流星 */
     fragmentShader:'varying vec2 vUv;\
       uniform float uOp,uT,uAsp;\
-      uniform vec4 uMet[3];\
+      uniform vec3 uSky[4];\
+      uniform vec4 uMet['+GX_MET+'];\
+      uniform vec4 uMetB['+GX_MET+'];\
       float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }\
       float cloud(vec2 uv,vec2 at,vec2 sc,float k){\
         vec2 q=(uv-at)*sc; return exp(-dot(q,q)*k);\
       }\
+      vec3 metCol(float h){\
+        if (h<0.34) return vec3(1.00,0.86,0.44);\
+        if (h<0.67) return vec3(1.00,0.63,0.80);\
+        return vec3(0.62,0.86,1.00);\
+      }\
       void main(){\
         vec2 uv=vUv;\
         float d=distance(uv,vec2(0.5));\
-        vec3 c=mix(vec3(0.036,0.021,0.078),vec3(0.004,0.003,0.017),smoothstep(0.0,0.82,d));\
-        /* 三团缓慢呼吸的星云，冷紫 / 青蓝 / 暖玫 */\
+        vec3 c=mix(uSky[0],uSky[0]*0.10,smoothstep(0.0,0.82,d));\
+        /* 三团缓慢呼吸的星云，颜色跟着当前形态走 */\
         float br=0.86+0.14*sin(uT*0.21);\
-        c+=vec3(0.085,0.031,0.140)*cloud(uv,vec2(0.23,0.74),vec2(1.5,2.3),2.6)*br;\
-        c+=vec3(0.016,0.062,0.098)*cloud(uv,vec2(0.80,0.30),vec2(1.7,2.0),3.0)*(1.72-br);\
-        c+=vec3(0.130,0.034,0.062)*cloud(uv,vec2(0.62,0.88),vec2(1.9,2.3),2.9)*br;\
-        c+=vec3(0.070,0.052,0.020)*cloud(uv,vec2(0.14,0.16),vec2(2.4,2.6),4.2)*(1.72-br);\
+        c+=uSky[1]*cloud(uv,vec2(0.23,0.74),vec2(1.5,2.3),2.6)*br;\
+        c+=uSky[2]*cloud(uv,vec2(0.80,0.30),vec2(1.7,2.0),3.0)*(1.72-br);\
+        c+=uSky[3]*cloud(uv,vec2(0.62,0.88),vec2(1.9,2.3),2.9)*br;\
+        c+=uSky[2]*0.55*cloud(uv,vec2(0.14,0.16),vec2(2.4,2.6),4.2)*(1.72-br);\
         /* 星点：格子里稀疏取点，各自闪烁 */\
         vec2 g=uv*vec2(uAsp*64.0,64.0);\
         vec2 id=floor(g), f=fract(g);\
         float h=hash(id);\
-        if (h>0.895){\
+        if (h>0.885){\
           vec2 sp=vec2(hash(id+1.7),hash(id+9.1));\
-          float sd=length((f-sp)*vec2(1.0,1.0));\
+          float sd=length(f-sp);\
           float tw=0.45+0.55*sin(uT*1.7+h*97.0);\
           float mag=0.30+0.70*hash(id+4.3);\
           vec3 sc=mix(vec3(0.72,0.84,1.0),vec3(1.0,0.90,0.76),hash(id+6.5));\
-          c+=sc*smoothstep(0.10,0.0,sd)*tw*mag*0.62;\
+          c+=sc*smoothstep(0.10,0.0,sd)*tw*mag*0.66;\
         }\
-        /* 流星：头亮、尾巴拖长变宽变淡 */\
-        for (int i=0;i<3;i++){\
+        /* 流星：白热的头 + 渐变拖尾 + 外圈柔光，学第一屏那套 */\
+        for (int i=0;i<'+GX_MET+';i++){\
           vec4 m=uMet[i];\
           if (m.w<=0.0) continue;\
+          vec4 b=uMetB[i];\
           vec2 dir=vec2(cos(m.z),sin(m.z));\
           vec2 q=(uv-m.xy)*vec2(uAsp,1.0);\
           float along=dot(q,dir);\
-          float perp=dot(q,vec2(-dir.y,dir.x));\
-          float t=clamp(-along/0.30,0.0,1.0);\
-          float body=pow(1.0-t,1.7)*step(-0.001,-along);\
-          float wq=mix(0.0022,0.0125,t);\
-          float pw=min(abs(perp)/wq,10.0);\
-          float line=exp(-pw*pw)*body;\
-          float head=exp(-min(length(q)*230.0,20.0));\
-          c+=mix(vec3(0.80,0.90,1.0),vec3(1.0,0.86,0.66),hash(vec2(m.z,float(i))))\
-             *(line*1.35+head*1.1)*m.w;\
+          float perp=abs(dot(q,vec2(-dir.y,dir.x)));\
+          float t=clamp(-along/b.x,0.0,1.0);\
+          float on=step(-0.0004,-along);\
+          float taper=pow(1.0-t,1.55)*on;\
+          float wq=b.y*(0.40+1.45*t);\
+          float core=exp(-min(perp/wq,9.0)*min(perp/wq,9.0))*taper;\
+          float glow=exp(-min(perp/(wq*3.4),9.0))*taper*0.30;\
+          float head=exp(-min(length(q)/(b.y*2.0),9.0));\
+          vec3 hc=mix(metCol(b.z),vec3(1.0),pow(1.0-t,3.0)*0.88);\
+          c+=hc*(core*1.55+glow)*m.w*b.w;\
+          c+=vec3(1.0,0.975,0.94)*head*m.w*b.w*1.25;\
         }\
         gl_FragColor=vec4(c,uOp);\
       }'
@@ -3416,23 +3455,30 @@ function initGalaxy(){
     uniform float uTime,uScale,uMix,uSpread,uSwirl,uBurst,uSolid;\
     varying vec3 vColor; varying float vA; varying vec3 vN;\
     void main(){\
-      vec3 p=mix(aPosA,aPosB,uMix);\
+      /* 每颗粒子错开一点起跑时间，整团是“流”过去的，不是一起平移 */\
+      float sg=fract(aPhase*0.15915);\
+      float ml=clamp((uMix-sg*0.26)/0.74,0.0,1.0);\
+      ml=ml*ml*(3.0-2.0*ml);\
+      vec3 p=mix(aPosA,aPosB,ml);\
+      /* 变形中途朝外鼓一下并轻微扭转，走弧线，过渡不生硬 */\
+      float fl=sin(ml*3.14159);\
       float rad=length(p.xz)+0.001;\
-      float ang=uSwirl*(2.2-rad*0.11)+uTime*0.05;\
+      float ang=uSwirl*(2.2-rad*0.11)+uTime*0.05+fl*0.42*(0.4+sg);\
       float c=cos(ang), s=sin(ang);\
       p.xz=mat2(c,-s,s,c)*p.xz;\
       vec3 nn=aNrm;\
       nn.xz=mat2(c,-s,s,c)*nn.xz;\
       vN=normalMatrix*nn;\
       vec3 dir=normalize(p+vec3(0.0001));\
-      p+=dir*(uSpread*7.0+uBurst*12.0*(0.5+aRand.x));\
+      p+=dir*(uSpread*7.0+uBurst*12.0*(0.5+aRand.x)+fl*1.15*(0.45+sg));\
       /* 实体形态几乎不抖，抖动只留给星云那类气态形态，否则表面会毛 */\
       p+=aRand*mix(0.10+0.20*sin(uTime*1.2+aPhase),0.012,uSolid);\
       vec4 mv=modelViewMatrix*vec4(p,1.0);\
       float tw=0.72+0.28*sin(uTime*1.8+aPhase);\
       float pt=aSize*(uScale/max(0.001,-mv.z));\
-      gl_PointSize=pt*mix((0.85+tw*0.30),1.34,uSolid)*(1.0+uBurst*0.5);\
-      vColor=mix(aColA,aColB,uMix); vA=tw;\
+      /* 飞行途中稍微拉大一点，尾巴感更连贯 */\
+      gl_PointSize=pt*mix((0.85+tw*0.30),1.34,uSolid)*(1.0+uBurst*0.5+fl*0.22);\
+      vColor=mix(aColA,aColB,ml); vA=tw;\
       gl_Position=projectionMatrix*mv;\
     }';
   /* 气态：中心实 + 窄光晕、叠加发光。实体：法线打光 + 高光 + 边缘光，不透明遮挡 */
@@ -3549,8 +3595,8 @@ function gxSetShape(idx){
   gxShout(SHAPE_NAMES[gxShapeIdx]);
   chime();
 }
-/* 背景流星：斜着划过，偶尔来一颗，攒够间隔才放下一颗 */
-let gxMet=[{},{},{}],gxMetGap=1400;
+/* 背景流星：学第一屏那套 —— 大小/速度/颜色分层，大的更长更亮更慢 */
+let gxMet=Array.from({length:GX_MET},()=>({life:0})),gxMetGap=600;
 function gxMetStep(dt){
   gxMetGap-=dt;
   for (const m of gxMet){
@@ -3558,30 +3604,50 @@ function gxMetStep(dt){
     m.x+=Math.cos(m.a)*m.sp*dt;
     m.y+=Math.sin(m.a)*m.sp*dt;
     m.life-=dt/m.dur;
-    if (m.x<-0.45||m.x>1.45||m.y<-0.45||m.y>1.45) m.life=0;
+    if (m.x<-0.7||m.x>1.7||m.y<-0.7||m.y>1.7) m.life=0;
   }
   if (gxMetGap<=0){
     const free=gxMet.find(m=>!(m.life>0));
     if (free){
-      const fromLeft=Math.random()<.5, down=Math.random()<.5;
-      let a=(down?0.32:-0.32)+(Math.random()-.5)*0.30;    /* 大致水平斜掠 */
-      if (!fromLeft) a=Math.PI-a;                          /* 从右边进来就反向 */
+      const big=Math.random()<.20;
+      const fromLeft=Math.random()<.5;
+      /* 多数从上方斜着往下坠，像第一屏 */
+      let a=0.42+(Math.random()-.5)*0.52;
+      if (!fromLeft) a=Math.PI-a;
       free.a=a;
-      free.x=fromLeft?-0.18:1.18;
-      free.y=0.12+Math.random()*0.70;
-      free.sp=0.00050+Math.random()*0.00055;
-      free.dur=1500+Math.random()*900;
+      const edgeTop=Math.random()<.55;
+      if (edgeTop){ free.x=fromLeft?(-0.10+Math.random()*.55):(0.55+Math.random()*.55); free.y=-0.16; }
+      else { free.x=fromLeft?-0.16:1.16; free.y=-0.05+Math.random()*.55; }
+      free.sp=big?(0.00034+Math.random()*0.00022):(0.00058+Math.random()*0.00062);
+      free.dur=big?(2400+Math.random()*1300):(1300+Math.random()*900);
+      free.len=big?(0.30+Math.random()*0.16):(0.15+Math.random()*0.13);
+      free.wid=big?(0.0038+Math.random()*0.0022):(0.0019+Math.random()*0.0013);
+      free.hue=Math.random();
+      free.br=big?(1.15+Math.random()*.35):(0.72+Math.random()*.40);
       free.life=1;
-      gxMetGap=2600+Math.random()*6200;
-    } else gxMetGap=900;
+      gxMetGap=380+Math.random()*1080;
+    } else gxMetGap=360;
   }
   if (GX){
-    const u=GX.fadeMat.uniforms.uMet.value;
-    for (let i=0;i<3;i++){
+    const u=GX.fadeMat.uniforms.uMet.value,ub=GX.fadeMat.uniforms.uMetB.value;
+    for (let i=0;i<GX_MET;i++){
       const m=gxMet[i];
-      u[i].set(m.x||0,m.y||0,m.a||0,m.life>0?Math.min(1,m.life*1.6):0);
+      /* 出场淡入、退场淡出，不会凭空冒出来 */
+      const l=m.life>0?Math.min(1,Math.min(m.life*2.6,(1-m.life)*7+0.15)):0;
+      u[i].set(m.x||0,m.y||0,m.a||0,l);
+      ub[i].set(m.len||.2,m.wid||.002,m.hue||0,m.br||1);
     }
   }
+}
+/* 背景配色跟着形态插值，转场和形变同步 */
+function gxSkyStep(mix){
+  if (!GX) return;
+  const A=SKY[gxLastShape]||SKY[0], B=SKY[gxShapeIdx]||SKY[0];
+  const u=GX.fadeMat.uniforms.uSky.value;
+  for (let i=0;i<4;i++)
+    u[i].set(A[i][0]+(B[i][0]-A[i][0])*mix,
+             A[i][1]+(B[i][1]-A[i][1])*mix,
+             A[i][2]+(B[i][2]-A[i][2])*mix);
 }
 function gxBoom(){
   gxBurst=1; subHit(.3,.8); chime();
@@ -3592,21 +3658,24 @@ function gxBoom(){
 function drawGalaxy(t,dt){
   if (!GX) return;
   if (GX.needClear){ GX.renderer.clear(true,true,true); GX.needClear=false; }
+  /* 所有缓动按真实帧长算，60Hz / 120Hz / 掉帧时手感一致，不会忽快忽慢 */
+  const st=Math.max(.25,Math.min(3,dt/16.67));
+  const ez=(r)=>1-Math.pow(1-r,st);
   if (camOn&&!gxDrag){
-    gxYaw+=(gxYawT-gxYaw)*.07;
-    gxPitch+=(gxPitchT-gxPitch)*.07;
+    gxYaw+=(gxYawT-gxYaw)*ez(.07);
+    gxPitch+=(gxPitchT-gxPitch)*ez(.07);
   } else if (!gxDrag){
     gxYaw+=gxYawV*dt; gxPitch+=gxPitchV*dt;
-    gxYawV+=(0.00008-gxYawV)*0.010; gxPitchV*=0.945;
+    gxYawV+=(0.00008-gxYawV)*ez(.010); gxPitchV*=Math.pow(.945,st);
   }
   gxPitch=Math.max(-1.35,Math.min(1.35,gxPitch));
-  gxDist+=(gxDistT-gxDist)*.08;
-  gxMix=Math.min(1,gxMix+dt/850);
-  gxSpread+=(gxSpreadT-gxSpread)*.07;
-  gxSwirl+=(gxSwirlT-gxSwirl)*.05;
-  gxWarm+=(gxWarmT-gxWarm)*.05;
-  gxHue+=(gxHueT-gxHue)*.05;
-  gxBurst*=.955;
+  gxDist+=(gxDistT-gxDist)*ez(.08);
+  gxMix=Math.min(1,gxMix+dt/1150);
+  gxSpread+=(gxSpreadT-gxSpread)*ez(.07);
+  gxSwirl+=(gxSwirlT-gxSwirl)*ez(.05);
+  gxWarm+=(gxWarmT-gxWarm)*ez(.05);
+  gxHue+=(gxHueT-gxHue)*ez(.05);
+  gxBurst*=Math.pow(.955,st);
 
   const cp=Math.cos(gxPitch),sp=Math.sin(gxPitch);
   GX.camera.position.set(Math.sin(gxYaw)*cp*gxDist,sp*gxDist,Math.cos(gxYaw)*cp*gxDist);
@@ -3634,9 +3703,11 @@ function drawGalaxy(t,dt){
   /* 打光跟着变形进度走，不抢在几何前面亮起来 */
   const fromSolid=SHAPE_SOLID[gxLastShape]?1:0, toSolid=wantSolid?1:0;
   u.uSolid.value=fromSolid+(toSolid-fromSolid)*u.uMix.value;
-  /* 实体形态不留拖尾（拖尾会把硬边糊掉），气态保留 */
-  GX.fadeMat.uniforms.uOp.value+=((GX.solidMode?1:0.42)-GX.fadeMat.uniforms.uOp.value)*.12;
+  /* 实体形态不留拖尾（拖尾会把硬边糊掉），气态保留。
+     但拖尾会把流星也糊成一片，所以实体那 1.0 是上限，气态压到 0.55 让流星还看得出轨迹 */
+  GX.fadeMat.uniforms.uOp.value+=((GX.solidMode?1:0.55)-GX.fadeMat.uniforms.uOp.value)*ez(.12);
   GX.fadeMat.uniforms.uT.value=t;
+  gxSkyStep(u.uMix.value);
   gxMetStep(dt);
 
   GX.renderer.render(GX.fadeScene,GX.fadeCam);
@@ -5014,8 +5085,7 @@ function drawLamp(dt){
   lip.addColorStop(1,'rgba(255,178,110,'+(.30*k).toFixed(3)+')');
   ctx.fillStyle=lip; ctx.fill();
 }
-/* ---------- 夜灯音景：开关声 + 雨声底噪 + 灯丝低鸣 ---------- */
-let lampNoise=null,lampRainG=null,lampRainF=null,lampHum=[],lampHumG=null,lampLfo=null;
+/* ---------- 夜灯音景：只留开关声和暖钟，不留任何持续底噪 ---------- */
 function lampClick(on){
   const ac=audio(),T=ac.currentTime;
   const len=Math.floor(ac.sampleRate*.05);
@@ -5027,56 +5097,11 @@ function lampClick(on){
   s.connect(f); f.connect(g); g.connect(sfxGain); s.start(T); s.stop(T+.06);
   blip(on?128:96,.06,'square',.05);
 }
-function lampAudioOn(){
-  const ac=audio();
-  if (lampNoise) return;
-  const len=Math.floor(ac.sampleRate*3);
-  const b=ac.createBuffer(1,len,ac.sampleRate),d=b.getChannelData(0);
-  for (let i=0;i<len;i++) d[i]=Math.random()*2-1;
-  lampNoise=ac.createBufferSource(); lampNoise.buffer=b; lampNoise.loop=true;
-  lampRainF=ac.createBiquadFilter(); lampRainF.type='bandpass';
-  lampRainF.frequency.value=1150; lampRainF.Q.value=.55;
-  lampRainG=ac.createGain(); lampRainG.gain.value=0;
-  lampRainG.gain.linearRampToValueAtTime(.055,ac.currentTime+2.4);
-  /* 雨势起伏：慢 LFO 推着带通走 */
-  lampLfo=ac.createOscillator(); lampLfo.type='sine'; lampLfo.frequency.value=.06;
-  const lfoG=ac.createGain(); lfoG.gain.value=260;
-  lampLfo.connect(lfoG); lfoG.connect(lampRainF.frequency); lampLfo.start();
-  lampNoise.connect(lampRainF); lampRainF.connect(lampRainG); lampRainG.connect(sfxGain);
-  lampNoise.start();
-  /* 灯丝低鸣：两个略微失谐的低音 */
-  lampHumG=ac.createGain(); lampHumG.gain.value=0;
-  lampHumG.gain.linearRampToValueAtTime(.020,ac.currentTime+1.8);
-  const hlp=ac.createBiquadFilter(); hlp.type='lowpass'; hlp.frequency.value=260;
-  lampHum=[];
-  [99.5,100.7,201.3].forEach((f,i)=>{
-    const o=ac.createOscillator(); o.type=i===2?'sine':'triangle'; o.frequency.value=f;
-    const g=ac.createGain(); g.gain.value=i===2?.22:1;
-    o.connect(g); g.connect(hlp); o.start(); lampHum.push(o);
-  });
-  hlp.connect(lampHumG); lampHumG.connect(sfxGain);
-}
-function lampAudioOff(){
-  if (!lampNoise) return;
-  const ac=audio(),T=ac.currentTime;
-  try{
-    lampRainG.gain.cancelScheduledValues(T);
-    lampRainG.gain.setValueAtTime(lampRainG.gain.value,T);
-    lampRainG.gain.linearRampToValueAtTime(0,T+.9);
-    lampHumG.gain.cancelScheduledValues(T);
-    lampHumG.gain.setValueAtTime(lampHumG.gain.value,T);
-    lampHumG.gain.linearRampToValueAtTime(0,T+.7);
-    lampNoise.stop(T+1.0);
-    lampHum.forEach(o=>o.stop(T+.8));
-    lampLfo.stop(T+1.0);
-  }catch(e){}
-  lampNoise=null; lampRainG=null; lampRainF=null; lampHumG=null; lampHum=[]; lampLfo=null;
-}
 function nightEnter(){
   nightOn=true;
   lampTxt.innerHTML=LAMP[Math.floor(Math.random()*LAMP.length)];
   nightlamp.classList.add('show'); musicDuck(.26);
-  lampInit(); lampAudioOn(); lampClick(true);
+  lampInit(); lampClick(true);
   setTimeout(()=>bell(261.63,.10,2.6),140);
   setTimeout(()=>bell(329.63,.075,3.0),620);
   setTimeout(()=>bell(196,.065,3.6),1180);
@@ -5084,7 +5109,7 @@ function nightEnter(){
 function nightExit(){
   if (!nightOn) return;
   nightOn=false; nightlamp.classList.remove('show'); musicDuck(.85);
-  lampClick(false); lampAudioOff();
+  lampClick(false);
   setTimeout(()=>bell(392,.075,1.6),120);
 }
 nightlamp.addEventListener('click',e=>{ e.stopPropagation(); nightExit(); });
