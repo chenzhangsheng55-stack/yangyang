@@ -473,6 +473,7 @@ body.rose .topbar,body.rose .dots{opacity:0;pointer-events:none}
   <section class="scene" id="s5">
     <div class="veil"></div>
     <canvas id="galaxy"></canvas>
+    <canvas class="bgc" id="gxMetCv" style="z-index:3;pointer-events:none"></canvas>
     <div class="sc-head" style="z-index:7"><h2>星 尘 之 手</h2><p>G E S T U R E　N E B U L A</p></div>
     <div class="gx-hud">
       <span>形态 <b id="gxShape">星云</b></span><br>
@@ -645,7 +646,7 @@ function mkLayer(id){
 const L={stars:mkLayer('cvStars'),heart:mkLayer('cvHeart'),sakura:mkLayer('cvSakura'),
   rain:mkLayer('cvRain'),stBg:mkLayer('cvStBg'),fx:mkLayer('fx'),
   rose:mkLayer('roseCv'),mon:mkLayer('monCv'),sn:mkLayer('snCv'),fog:mkLayer('fogCv'),
-  crush:mkLayer('crushCv'),lamp:mkLayer('lampCv')};
+  crush:mkLayer('crushCv'),lamp:mkLayer('lampCv'),gxm:mkLayer('gxMetCv')};
 
 /* =========================================================
    S1 星空 + 3D 粒子爱心（原版）
@@ -2663,7 +2664,6 @@ let gxYaw=.5,gxPitch=-.22,gxYawV=.00010,gxPitchV=0,gxDist=26,gxDistT=26;
 let gxSpread=0,gxSpreadT=0,gxSwirl=0,gxSwirlT=0,gxWarm=0,gxWarmT=0,gxBurst=0;
 let gxHue=0,gxHueT=0,gxMix=1,gxShapeIdx=0,gxLastShape=0;
 const GX_N=MOBILE?14000:30000;
-const GX_MET=MOBILE?6:8;
 /* [gxShapePoint 里的 kind, 名字, 是否实体]
    实体形态：法线打光 + 深度遮挡，看着是个真东西；
    气态形态（星云/旋涡/星环/晶格）保留叠加发光和拖尾。
@@ -3377,24 +3377,15 @@ function initGalaxy(){
   const fadeMat=new THREE.ShaderMaterial({
     transparent:true,depthTest:false,depthWrite:false,
     uniforms:{uOp:{value:0.42},uT:{value:0},uAsp:{value:1},
-      uSky:{value:[new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3()]},
-      uMet:{value:Array.from({length:GX_MET},()=>new THREE.Vector4())},
-      uMetB:{value:Array.from({length:GX_MET},()=>new THREE.Vector4())}},
+      uSky:{value:[new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3()]}},
     vertexShader:'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.,1.); }',
-    /* 背景配色由 uSky 给，随形态一起插值；再叠星点和流星 */
+    /* 背景配色由 uSky 给，随形态一起插值；再叠一层稀疏星点。流星走上面那层 2D 画布 */
     fragmentShader:'varying vec2 vUv;\
       uniform float uOp,uT,uAsp;\
       uniform vec3 uSky[4];\
-      uniform vec4 uMet['+GX_MET+'];\
-      uniform vec4 uMetB['+GX_MET+'];\
       float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }\
       float cloud(vec2 uv,vec2 at,vec2 sc,float k){\
         vec2 q=(uv-at)*sc; return exp(-dot(q,q)*k);\
-      }\
-      vec3 metCol(float h){\
-        if (h<0.34) return vec3(1.00,0.86,0.44);\
-        if (h<0.67) return vec3(1.00,0.63,0.80);\
-        return vec3(0.62,0.86,1.00);\
       }\
       void main(){\
         vec2 uv=vUv;\
@@ -3417,26 +3408,6 @@ function initGalaxy(){
           float mag=0.30+0.70*hash(id+4.3);\
           vec3 sc=mix(vec3(0.72,0.84,1.0),vec3(1.0,0.90,0.76),hash(id+6.5));\
           c+=sc*smoothstep(0.10,0.0,sd)*tw*mag*0.66;\
-        }\
-        /* 流星：白热的头 + 渐变拖尾 + 外圈柔光，学第一屏那套 */\
-        for (int i=0;i<'+GX_MET+';i++){\
-          vec4 m=uMet[i];\
-          if (m.w<=0.0) continue;\
-          vec4 b=uMetB[i];\
-          vec2 dir=vec2(cos(m.z),sin(m.z));\
-          vec2 q=(uv-m.xy)*vec2(uAsp,1.0);\
-          float along=dot(q,dir);\
-          float perp=abs(dot(q,vec2(-dir.y,dir.x)));\
-          float t=clamp(-along/b.x,0.0,1.0);\
-          float on=step(-0.0004,-along);\
-          float taper=pow(1.0-t,1.55)*on;\
-          float wq=b.y*(0.40+1.45*t);\
-          float core=exp(-min(perp/wq,9.0)*min(perp/wq,9.0))*taper;\
-          float glow=exp(-min(perp/(wq*3.4),9.0))*taper*0.30;\
-          float head=exp(-min(length(q)/(b.y*2.0),9.0));\
-          vec3 hc=mix(metCol(b.z),vec3(1.0),pow(1.0-t,3.0)*0.88);\
-          c+=hc*(core*1.55+glow)*m.w*b.w;\
-          c+=vec3(1.0,0.975,0.94)*head*m.w*b.w*1.25;\
         }\
         gl_FragColor=vec4(c,uOp);\
       }'
@@ -3596,49 +3567,79 @@ function gxSetShape(idx){
   gxShout(SHAPE_NAMES[gxShapeIdx]);
   chime();
 }
-/* 背景流星：学第一屏那套 —— 大小/速度/颜色分层，大的更长更亮更慢 */
-let gxMet=Array.from({length:GX_MET},()=>({life:0})),gxMetGap=600;
-function gxMetStep(dt){
-  gxMetGap-=dt;
-  for (const m of gxMet){
-    if (!(m.life>0)) continue;
-    m.x+=Math.cos(m.a)*m.sp*dt;
-    m.y+=Math.sin(m.a)*m.sp*dt;
-    m.life-=dt/m.dur;
-    if (m.x<-0.7||m.x>1.7||m.y<-0.7||m.y>1.7) m.life=0;
+/* 末屏流星：和第一屏同一套画法 —— 渐变拖尾 + 星核光斑 + 掉火星，
+   大流星落地还会炸开。画在星云上面那层 2D 画布上，每帧清空 */
+let gxMets=[],gxSparks=[];
+function drawGxMeteors(dt){
+  const {x:ctx,w,h}=L.gxm;
+  ctx.clearRect(0,0,w,h);
+  const st=Math.max(.25,Math.min(3,dt/16.67));
+  if (Math.random()<(MOBILE?.030:.042)*st&&gxMets.length<(MOBILE?7:11)){
+    const big=Math.random()<.20;
+    const sp=big?(3.0+Math.random()*1.6):(5.0+Math.random()*5.0);
+    const a=.60+(Math.random()-.5)*.36;
+    const hr=Math.random();
+    gxMets.push({
+      x:Math.random()*w*1.35-w*.2, y:-40-Math.random()*170,
+      vx:-Math.cos(a)*sp, vy:Math.sin(a)*sp,
+      len:big?(240+Math.random()*180):(95+Math.random()*145),
+      wid:big?(2.6+Math.random()*1.5):(1.1+Math.random()*1.2),
+      life:1, dec:big?.0030:.0058, big:big, shed:0,
+      hue:hr<.42?45:(hr<.72?330:200)});
   }
-  if (gxMetGap<=0){
-    const free=gxMet.find(m=>!(m.life>0));
-    if (free){
-      const big=Math.random()<.20;
-      const fromLeft=Math.random()<.5;
-      /* 多数从上方斜着往下坠，像第一屏 */
-      let a=0.42+(Math.random()-.5)*0.52;
-      if (!fromLeft) a=Math.PI-a;
-      free.a=a;
-      const edgeTop=Math.random()<.55;
-      if (edgeTop){ free.x=fromLeft?(-0.10+Math.random()*.55):(0.55+Math.random()*.55); free.y=-0.16; }
-      else { free.x=fromLeft?-0.16:1.16; free.y=-0.05+Math.random()*.55; }
-      free.sp=big?(0.00034+Math.random()*0.00022):(0.00058+Math.random()*0.00062);
-      free.dur=big?(2400+Math.random()*1300):(1300+Math.random()*900);
-      free.len=big?(0.30+Math.random()*0.16):(0.15+Math.random()*0.13);
-      free.wid=big?(0.0038+Math.random()*0.0022):(0.0019+Math.random()*0.0013);
-      free.hue=Math.random();
-      free.br=big?(1.15+Math.random()*.35):(0.72+Math.random()*.40);
-      free.life=1;
-      gxMetGap=380+Math.random()*1080;
-    } else gxMetGap=360;
-  }
-  if (GX){
-    const u=GX.fadeMat.uniforms.uMet.value,ub=GX.fadeMat.uniforms.uMetB.value;
-    for (let i=0;i<GX_MET;i++){
-      const m=gxMet[i];
-      /* 出场淡入、退场淡出，不会凭空冒出来 */
-      const l=m.life>0?Math.min(1,Math.min(m.life*2.6,(1-m.life)*7+0.15)):0;
-      u[i].set(m.x||0,m.y||0,m.a||0,l);
-      ub[i].set(m.len||.2,m.wid||.002,m.hue||0,m.br||1);
+  ctx.lineCap='round';
+  for (let i=gxMets.length-1;i>=0;i--){
+    const m=gxMets[i];
+    m.x+=m.vx*st; m.y+=m.vy*st; m.life-=m.dec*st;
+    const k=m.len/Math.hypot(m.vx,m.vy);
+    const l=Math.max(0,m.life);
+    const g=ctx.createLinearGradient(m.x,m.y,m.x-m.vx*k,m.y-m.vy*k);
+    g.addColorStop(0,'rgba(255,255,255,'+(l*.98)+')');
+    g.addColorStop(.16,'hsla('+m.hue+',100%,82%,'+(l*.78)+')');
+    g.addColorStop(.52,'hsla('+m.hue+',100%,66%,'+(l*.30)+')');
+    g.addColorStop(1,'hsla('+m.hue+',100%,60%,0)');
+    ctx.strokeStyle=g; ctx.lineWidth=m.wid;
+    ctx.beginPath(); ctx.moveTo(m.x,m.y); ctx.lineTo(m.x-m.vx*k,m.y-m.vy*k); ctx.stroke();
+    /* 星核 */
+    ctx.globalCompositeOperation='lighter';
+    ctx.globalAlpha=l;
+    const gs=(m.big?34:18)*(.6+l*.6);
+    ctx.drawImage(m.hue===45?SPR.gold:(m.hue===330?SPR.pink:SPR.aqua),m.x-gs/2,m.y-gs/2,gs,gs);
+    ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
+    /* 掉火星 */
+    m.shed-=st;
+    if (m.shed<=0){
+      m.shed=m.big?1:3;
+      gxSparks.push({x:m.x,y:m.y,vx:(Math.random()-.5)*.7-m.vx*.06,vy:(Math.random()-.5)*.7-m.vy*.06,
+        life:1,dec:.016+Math.random()*.022,r:(m.big?1.0:.6)+Math.random()*1.3,hue:m.hue});
+    }
+    if (m.life<=0||m.y>h+80||m.x<-260){
+      if (m.big&&m.y<h&&m.y>0){
+        for (let s=0;s<14;s++){
+          const aa=Math.random()*6.283,vv=.6+Math.random()*2.4;
+          gxSparks.push({x:m.x,y:m.y,vx:Math.cos(aa)*vv,vy:Math.sin(aa)*vv,
+            life:1,dec:.014+Math.random()*.014,r:.8+Math.random()*1.6,hue:m.hue});
+        }
+      }
+      gxMets.splice(i,1);
     }
   }
+  /* 火星 */
+  ctx.globalCompositeOperation='lighter';
+  for (let i=gxSparks.length-1;i>=0;i--){
+    const s=gxSparks[i];
+    s.x+=s.vx*st; s.y+=s.vy*st; s.vy+=.010*st; s.vx*=Math.pow(.985,st); s.life-=s.dec*st;
+    if (s.life<=0){ gxSparks.splice(i,1); continue; }
+    ctx.globalAlpha=s.life*(.55+.45*Math.sin(s.life*22));
+    ctx.fillStyle='hsl('+s.hue+',100%,'+(72+s.life*22)+'%)';
+    ctx.beginPath(); ctx.arc(s.x,s.y,s.r*s.life,0,6.283); ctx.fill();
+  }
+  ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
+}
+function gxMetClear(){
+  gxMets=[]; gxSparks=[];
+  const {x:ctx,w,h}=L.gxm;
+  ctx.clearRect(0,0,w,h);
 }
 /* 每次换形态时给天色掷一组扰动：亮度 ±20%，再加一点暖冷偏移。
    幅度刻意压小，保证还是同一套配色，只是不会两次完全一样 */
@@ -3721,12 +3722,10 @@ function drawGalaxy(t,dt){
   /* 打光跟着变形进度走，不抢在几何前面亮起来 */
   const fromSolid=SHAPE_SOLID[gxLastShape]?1:0, toSolid=wantSolid?1:0;
   u.uSolid.value=fromSolid+(toSolid-fromSolid)*u.uMix.value;
-  /* 实体形态不留拖尾（拖尾会把硬边糊掉），气态保留。
-     但拖尾会把流星也糊成一片，所以实体那 1.0 是上限，气态压到 0.55 让流星还看得出轨迹 */
-  GX.fadeMat.uniforms.uOp.value+=((GX.solidMode?1:0.55)-GX.fadeMat.uniforms.uOp.value)*ez(.12);
+  /* 实体形态不留拖尾（拖尾会把硬边糊掉），气态保留 */
+  GX.fadeMat.uniforms.uOp.value+=((GX.solidMode?1:0.42)-GX.fadeMat.uniforms.uOp.value)*ez(.12);
   GX.fadeMat.uniforms.uT.value=t;
   gxSkyStep(u.uMix.value);
-  gxMetStep(dt);
 
   GX.renderer.render(GX.fadeScene,GX.fadeCam);
   if (GX.solidMode) GX.renderer.clear(false,true,false);
@@ -5250,7 +5249,8 @@ function loop(now){
     else if (active==='s2') drawSakura();
     else if (active==='s3') drawRain(dt);
     else if (active==='s4'){ drawStBg(); drawSnake(dt); }
-    else if (active==='s5') drawGalaxy(t,dt);
+    else if (active==='s5'){ drawGalaxy(t,dt); drawGxMeteors(dt); }
+    else if (gxMets.length||gxSparks.length) gxMetClear();
   }
   drawFx();
   requestAnimationFrame(loop);
