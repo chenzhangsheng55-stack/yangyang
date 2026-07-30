@@ -329,15 +329,14 @@ body.rose .topbar,body.rose .dots{opacity:0;pointer-events:none}
   background:linear-gradient(180deg,#fff,#ffd0e6,#ff2d78);-webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 0 18px rgba(255,60,130,.95))}
 .dose i{font-style:normal;font-size:11px;letter-spacing:.3em;color:#ffd9ea}
-.nightlamp{position:fixed;inset:0;z-index:62;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  opacity:0;pointer-events:none;transition:opacity 1.2s;text-align:center;padding:24px;background:rgba(4,1,8,.72)}
+.nightlamp{position:fixed;inset:0;z-index:62;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+  opacity:0;pointer-events:none;transition:opacity 1.2s;text-align:center;
+  padding:24px 24px calc(env(safe-area-inset-bottom,0px) + 16vh);background:rgba(3,1,7,.80)}
 .nightlamp.show{opacity:1;pointer-events:auto}
-.lamp-glow{width:min(300px,62vw);aspect-ratio:1;border-radius:50%;
-  background:radial-gradient(circle at 50% 45%,rgba(255,214,150,.78),rgba(255,150,110,.28) 42%,transparent 72%);
-  animation:lampB 5.5s ease-in-out infinite}
-@keyframes lampB{0%,100%{transform:scale(.9);opacity:.6}50%{transform:scale(1.1);opacity:1}}
-.lamp-txt{margin-top:-30px;font-size:clamp(15px,4vw,19px);line-height:2.1;color:#ffe6cf;text-shadow:0 0 24px rgba(255,170,110,.85)}
-.lamp-hint{margin-top:22px;font-size:11px;letter-spacing:.3em;color:rgba(255,220,190,.5)}
+.lamp-cv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.lamp-txt{position:relative;font-size:clamp(15px,4vw,19px);line-height:2.1;color:#ffe9d6;
+  text-shadow:0 0 26px rgba(255,168,104,.9),0 0 60px rgba(255,140,80,.45)}
+.lamp-hint{position:relative;margin-top:26px;font-size:11px;letter-spacing:.3em;color:rgba(255,222,194,.42)}
 </style>
 </head>
 <body>
@@ -601,9 +600,9 @@ body.rose .topbar,body.rose .dots{opacity:0;pointer-events:none}
 <div class="dose" id="dose"><b id="doseNum">0</b><i>M G　O F　L O V E</i></div>
 
 <div class="nightlamp" id="nightlamp">
-  <div class="lamp-glow"></div>
+  <canvas class="lamp-cv" id="lampCv"></canvas>
   <div class="lamp-txt" id="lampTxt"></div>
-  <div class="lamp-hint">轻 触 任 意 处 亮 灯</div>
+  <div class="lamp-hint">轻 触 任 意 处 熄 灯</div>
 </div>
 
 <script src="three.min.js"></script>
@@ -645,7 +644,8 @@ function mkLayer(id){
 }
 const L={stars:mkLayer('cvStars'),heart:mkLayer('cvHeart'),sakura:mkLayer('cvSakura'),
   rain:mkLayer('cvRain'),stBg:mkLayer('cvStBg'),fx:mkLayer('fx'),
-  rose:mkLayer('roseCv'),mon:mkLayer('monCv'),sn:mkLayer('snCv'),fog:mkLayer('fogCv'),crush:mkLayer('crushCv')};
+  rose:mkLayer('roseCv'),mon:mkLayer('monCv'),sn:mkLayer('snCv'),fog:mkLayer('fogCv'),
+  crush:mkLayer('crushCv'),lamp:mkLayer('lampCv')};
 
 /* =========================================================
    S1 星空 + 3D 粒子爱心（原版）
@@ -2663,13 +2663,20 @@ let gxYaw=.5,gxPitch=-.22,gxYawV=.00010,gxPitchV=0,gxDist=26,gxDistT=26;
 let gxSpread=0,gxSpreadT=0,gxSwirl=0,gxSwirlT=0,gxWarm=0,gxWarmT=0,gxBurst=0;
 let gxHue=0,gxHueT=0,gxMix=1,gxShapeIdx=0,gxLastShape=0;
 const GX_N=MOBILE?14000:30000;
-const SHAPE_NAMES=['星云','心','旋涡','星环','晶格','圣诞树','汽车','房屋','苹果','五角星',
-                   '冰淇淋','棒棒糖','排球','针管','咖啡杯',
-                   '香蕉','书包','圣诞老人','小猫','小鸭','熊猫','企鹅','机器人','雪人','兔子'];
-const SHAPE_N=SHAPE_NAMES.length;
-/* 实体形态：法线打光 + 深度遮挡，看着是个真东西；
-   气态形态（星云/旋涡/星环/晶格）保留叠加发光和拖尾 */
-const SHAPE_SOLID=SHAPE_NAMES.map((_,i)=>i>=5||i===1||i===9);
+/* [gxShapePoint 里的 kind, 名字, 是否实体]
+   实体形态：法线打光 + 深度遮挡，看着是个真东西；
+   气态形态（星云/旋涡/星环/晶格）保留叠加发光和拖尾。
+   kind 是 switch 的分支号，和显示顺序解耦，删形态不用重编号 */
+const SHAPE_DEF=[
+  [0,'星云',0],[1,'心',1],[2,'旋涡',0],[3,'星环',0],[4,'晶格',0],
+  [5,'圣诞树',1],[6,'汽车',1],[7,'房屋',1],[8,'苹果',1],[9,'五角星',1],
+  [10,'冰淇淋',1],[11,'棒棒糖',1],[12,'排球',1],[13,'针管',1],[14,'咖啡杯',1],
+  [16,'书包',1],[18,'小猫',1],[19,'小鸭',1],[20,'熊猫',1],[21,'企鹅',1],
+  [22,'机器人',1],[23,'雪人',1],[24,'兔子',1]];
+const SHAPE_NAMES=SHAPE_DEF.map(d=>d[1]);
+const SHAPE_KIND=SHAPE_DEF.map(d=>d[0]);
+const SHAPE_SOLID=SHAPE_DEF.map(d=>!!d[2]);
+const SHAPE_N=SHAPE_DEF.length;
 const gxShapeEl=document.getElementById('gxShape'),gxGestEl=document.getElementById('gxGest');
 const gxFaceEl=document.getElementById('gxFace'),gxCountEl=document.getElementById('gxCount');
 const gxShoutEl=document.getElementById('gxShout');
@@ -2750,9 +2757,8 @@ const C={
   vballBlue:[.24,.46,.92], vballYellow:[1,.82,.24], seam:[.14,.15,.20],
   pinkLiquid:[1,.34,.60], needle:[.82,.86,.94],
   coffee:[.34,.18,.10], steam:[.86,.92,1.0],
-  banana:[1,.86,.26], bananaDark:[.92,.74,.20],
   bagBody:[.30,.52,.86], bagFlap:[.22,.42,.74], bagPocket:[.38,.60,.92], bagStrap:[.20,.30,.48],
-  santaRed:[.86,.16,.20], skin:[1,.82,.68], beltBlack:[.12,.12,.16],
+  beltBlack:[.12,.12,.16],
   catOrange:[1,.66,.30], catPink:[1,.62,.68], catDark:[.86,.48,.18],
   duckYellow:[1,.84,.22], duckBeak:[1,.55,.12], duckWing:[.96,.76,.16],
   robotBody:[.72,.78,.88], robotEye:[.30,.92,1.0]
@@ -3019,17 +3025,6 @@ function gxShapePoint(kind,i,n){
       }]
     ]);
   }
-  case 15:{                                   /* 香蕉：沿弧线扫一个渐变粗细的管 */
-    const t=Math.random();
-    const a=-1.05+t*2.10, R=7.4;
-    const cx=Math.cos(a)*R, cy=Math.sin(a)*R+1.2;
-    const thick=1.45*Math.pow(Math.sin(Math.PI*t),0.42);
-    const ph=Math.random()*6.283, rr=thick*Math.sqrt(Math.random());
-    const nx=Math.cos(a+1.5708), ny=Math.sin(a+1.5708);
-    const tipEnd=(t<.06||t>.94);
-    return {p:[cx+nx*Math.cos(ph)*rr, cy+ny*Math.cos(ph)*rr, Math.sin(ph)*rr],
-      c:tipEnd?C.brown:(Math.random()<.86?C.banana:C.bananaDark)};
-  }
   case 16:{                                   /* 书包 */
     return pickPart([
       [34,()=>boxPt(0,-0.4,0,7.6,8.4,3.8,C.bagBody)],       /* 包体 */
@@ -3053,34 +3048,6 @@ function gxShapePoint(kind,i,n){
       }],
       [6,()=>{                                              /* 拉链 */
         return {p:[rnd(-2.3,2.3), -1.1+rnd(-.12,.12), 2.06],c:C.white};
-      }]
-    ]);
-  }
-  case 17:{                                   /* 圣诞老人（民俗形象，非注册角色） */
-    return pickPart([
-      [26,()=>spherePt(0,-2.6,0,3.5,C.santaRed)],           /* 红衣圆肚 */
-      [12,()=>spherePt(0,2.2,0,2.1,C.skin)],                /* 脸 */
-      [16,()=>{                                             /* 大白胡子 */
-        const u=Math.random()*2-1,th=Math.random()*6.283,s=Math.sqrt(Math.max(0,1-u*u));
-        const x=s*Math.cos(th)*2.3, y=u*2.3, z=s*Math.sin(th)*2.3;
-        if (y>0.6||z<0) return {p:[x,1.2+y*.9,z+1.0],c:C.white};
-        return {p:[x,1.1+y,z+0.9],c:C.white};
-      }],
-      [12,()=>tubePt(0,3.9,0, -1.2,6.9,0, 2.1,.22, C.santaRed)],    /* 红帽尖 */
-      [6,()=>cylPt(0,3.85,0,2.28,.72,'y',C.white)],                 /* 白帽檐 */
-      [4,()=>spherePt(-3.4,6.6,0,.85,C.white)],             /* 绒球 */
-      [8,()=>{                                              /* 腰带 */
-        const a=Math.random()*6.283;
-        return {p:[Math.cos(a)*3.4,-2.9+rnd(-.42,.42),Math.sin(a)*3.4],c:C.beltBlack};
-      }],
-      [4,()=>boxPt(0,-2.9,3.3,1.5,1.5,.3,C.gold)],          /* 金扣 */
-      [8,()=>{                                              /* 手臂 */
-        const side=Math.random()<.5?-1:1;
-        return cylPt(side*3.4,-1.8,0,.85,3.0,'y',C.santaRed);
-      }],
-      [4,()=>{                                              /* 靴子 */
-        const side=Math.random()<.5?-1.6:1.6;
-        return spherePt(side,-6.2,.5,1.15,C.beltBlack);
       }]
     ]);
   }
@@ -3382,12 +3349,56 @@ function initGalaxy(){
   const fadeCam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
   const fadeMat=new THREE.ShaderMaterial({
     transparent:true,depthTest:false,depthWrite:false,
-    uniforms:{uOp:{value:0.42}},
+    uniforms:{uOp:{value:0.42},uT:{value:0},uAsp:{value:1},
+      uMet:{value:[new THREE.Vector4(),new THREE.Vector4(),new THREE.Vector4()]}},
     vertexShader:'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.,1.); }',
-    fragmentShader:'varying vec2 vUv; uniform float uOp;\
+    /* 背景不再是一块死黑：深空底色 + 三团星云 + 稀疏星点 + 偶尔划过的流星 */
+    fragmentShader:'varying vec2 vUv;\
+      uniform float uOp,uT,uAsp;\
+      uniform vec4 uMet[3];\
+      float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }\
+      float cloud(vec2 uv,vec2 at,vec2 sc,float k){\
+        vec2 q=(uv-at)*sc; return exp(-dot(q,q)*k);\
+      }\
       void main(){\
-        float d=distance(vUv,vec2(0.5));\
-        vec3 c=mix(vec3(0.030,0.018,0.068),vec3(0.004,0.003,0.020),smoothstep(0.0,0.80,d));\
+        vec2 uv=vUv;\
+        float d=distance(uv,vec2(0.5));\
+        vec3 c=mix(vec3(0.036,0.021,0.078),vec3(0.004,0.003,0.017),smoothstep(0.0,0.82,d));\
+        /* 三团缓慢呼吸的星云，冷紫 / 青蓝 / 暖玫 */\
+        float br=0.86+0.14*sin(uT*0.21);\
+        c+=vec3(0.085,0.031,0.140)*cloud(uv,vec2(0.23,0.74),vec2(1.5,2.3),2.6)*br;\
+        c+=vec3(0.016,0.062,0.098)*cloud(uv,vec2(0.80,0.30),vec2(1.7,2.0),3.0)*(1.72-br);\
+        c+=vec3(0.130,0.034,0.062)*cloud(uv,vec2(0.62,0.88),vec2(1.9,2.3),2.9)*br;\
+        c+=vec3(0.070,0.052,0.020)*cloud(uv,vec2(0.14,0.16),vec2(2.4,2.6),4.2)*(1.72-br);\
+        /* 星点：格子里稀疏取点，各自闪烁 */\
+        vec2 g=uv*vec2(uAsp*64.0,64.0);\
+        vec2 id=floor(g), f=fract(g);\
+        float h=hash(id);\
+        if (h>0.895){\
+          vec2 sp=vec2(hash(id+1.7),hash(id+9.1));\
+          float sd=length((f-sp)*vec2(1.0,1.0));\
+          float tw=0.45+0.55*sin(uT*1.7+h*97.0);\
+          float mag=0.30+0.70*hash(id+4.3);\
+          vec3 sc=mix(vec3(0.72,0.84,1.0),vec3(1.0,0.90,0.76),hash(id+6.5));\
+          c+=sc*smoothstep(0.10,0.0,sd)*tw*mag*0.62;\
+        }\
+        /* 流星：头亮、尾巴拖长变宽变淡 */\
+        for (int i=0;i<3;i++){\
+          vec4 m=uMet[i];\
+          if (m.w<=0.0) continue;\
+          vec2 dir=vec2(cos(m.z),sin(m.z));\
+          vec2 q=(uv-m.xy)*vec2(uAsp,1.0);\
+          float along=dot(q,dir);\
+          float perp=dot(q,vec2(-dir.y,dir.x));\
+          float t=clamp(-along/0.30,0.0,1.0);\
+          float body=pow(1.0-t,1.7)*step(-0.001,-along);\
+          float wq=mix(0.0022,0.0125,t);\
+          float pw=min(abs(perp)/wq,10.0);\
+          float line=exp(-pw*pw)*body;\
+          float head=exp(-min(length(q)*230.0,20.0));\
+          c+=mix(vec3(0.80,0.90,1.0),vec3(1.0,0.86,0.66),hash(vec2(m.z,float(i))))\
+             *(line*1.35+head*1.1)*m.w;\
+        }\
         gl_FragColor=vec4(c,uOp);\
       }'
   });
@@ -3395,7 +3406,7 @@ function initGalaxy(){
 
   /* 形态按需生成：启动只建第一个，切到哪个才建哪个 */
   const shapes=new Array(SHAPE_N);
-  shapes[0]=gxBuildShape(0,GX_N);
+  shapes[0]=gxBuildShape(SHAPE_KIND[0],GX_N);
 
   const uni={uTime:{value:0},uScale:{value:600},uMix:{value:1},
     uSpread:{value:0},uSwirl:{value:0},uWarm:{value:0},uBurst:{value:0},uHue:{value:0},
@@ -3496,6 +3507,7 @@ function gxResize(){
   GX.renderer.setSize(w,h,false);
   GX.camera.aspect=w/h; GX.camera.updateProjectionMatrix();
   GX.uni.uScale.value=h*DPR*0.5;
+  GX.fadeMat.uniforms.uAsp.value=w/Math.max(1,h);
   GX.needClear=true;
 }
 let shapeBag=[];
@@ -3515,7 +3527,7 @@ function nextShapeIdx(){
   return n;
 }
 function gxGetShape(k){
-  if (!GX.shapes[k]) GX.shapes[k]=gxBuildShape(k,GX_N);
+  if (!GX.shapes[k]) GX.shapes[k]=gxBuildShape(SHAPE_KIND[k],GX_N);
   return GX.shapes[k];
 }
 function gxSetShape(idx){
@@ -3536,6 +3548,40 @@ function gxSetShape(idx){
   gxShapeEl.textContent=SHAPE_NAMES[gxShapeIdx];
   gxShout(SHAPE_NAMES[gxShapeIdx]);
   chime();
+}
+/* 背景流星：斜着划过，偶尔来一颗，攒够间隔才放下一颗 */
+let gxMet=[{},{},{}],gxMetGap=1400;
+function gxMetStep(dt){
+  gxMetGap-=dt;
+  for (const m of gxMet){
+    if (!(m.life>0)) continue;
+    m.x+=Math.cos(m.a)*m.sp*dt;
+    m.y+=Math.sin(m.a)*m.sp*dt;
+    m.life-=dt/m.dur;
+    if (m.x<-0.45||m.x>1.45||m.y<-0.45||m.y>1.45) m.life=0;
+  }
+  if (gxMetGap<=0){
+    const free=gxMet.find(m=>!(m.life>0));
+    if (free){
+      const fromLeft=Math.random()<.5, down=Math.random()<.5;
+      let a=(down?0.32:-0.32)+(Math.random()-.5)*0.30;    /* 大致水平斜掠 */
+      if (!fromLeft) a=Math.PI-a;                          /* 从右边进来就反向 */
+      free.a=a;
+      free.x=fromLeft?-0.18:1.18;
+      free.y=0.12+Math.random()*0.70;
+      free.sp=0.00050+Math.random()*0.00055;
+      free.dur=1500+Math.random()*900;
+      free.life=1;
+      gxMetGap=2600+Math.random()*6200;
+    } else gxMetGap=900;
+  }
+  if (GX){
+    const u=GX.fadeMat.uniforms.uMet.value;
+    for (let i=0;i<3;i++){
+      const m=gxMet[i];
+      u[i].set(m.x||0,m.y||0,m.a||0,m.life>0?Math.min(1,m.life*1.6):0);
+    }
+  }
 }
 function gxBoom(){
   gxBurst=1; subHit(.3,.8); chime();
@@ -3590,6 +3636,8 @@ function drawGalaxy(t,dt){
   u.uSolid.value=fromSolid+(toSolid-fromSolid)*u.uMix.value;
   /* 实体形态不留拖尾（拖尾会把硬边糊掉），气态保留 */
   GX.fadeMat.uniforms.uOp.value+=((GX.solidMode?1:0.42)-GX.fadeMat.uniforms.uOp.value)*.12;
+  GX.fadeMat.uniforms.uT.value=t;
+  gxMetStep(dt);
 
   GX.renderer.render(GX.fadeScene,GX.fadeCam);
   if (GX.solidMode) GX.renderer.clear(false,true,false);
@@ -3960,8 +4008,29 @@ const crFillBtn=document.getElementById('crFill'),crClearBtn=document.getElement
 const crLineEl=document.getElementById('crLine');
 
 const CR_PRESET=['加班','夜班','排班表','被凶了','内耗','没睡够','焦虑','考试','写不完','起不来','手抖','emo'];
-const CR_DONE=['碎完了。','清零，收工。','没了，去睡吧。','空了，歇会儿。','剩下的我来。','今天到此为止。'];
-const CR_FULL=['压力换成电了。','这点力气，还你。','充满，够撑到下班。','够用了，别硬扛。'];
+/* 粉完的回应：短句，暖但不腻。抽完一轮才会重复 */
+const CR_DONE=[
+  '碎完了。','清零，收工。','没了，去睡吧。','空了，歇会儿。','剩下的我来。',
+  '今天到此为止。','干净了，去吃点热的。','都碾了，别回头看。','清空了，明天再说。',
+  '这些不值得你熬夜。','好了，喝口水。','处理完了，去躺一会儿。','渣都不剩，走吧。',
+  '你今天够辛苦了。','别攒着，攒着更沉。','下班吧，这是医嘱。','机器还热着，随时再来。',
+  '你比这些硬。','碎得挺彻底。','先顾自己，别的排后面。','今天的额度用完了。',
+  '空盒子看着真舒服。','剩下的交给时间。','你已经做得够多了。','留点力气给自己。',
+  '明天的事明天扛。','歇一下不算偷懒。','碾过就不算事了。','够了，真的够了。',
+  '把肩膀放下来。','这一把干得漂亮。','轻了没有？'];
+const CR_FULL=['压力换成电了。','这点力气，还你。','充满，够撑到下班。','够用了，别硬扛。',
+  '存起来，明天用。','这下有底气了。'];
+let crBag=[];
+function crDoneLine(){
+  if (!crBag.length){
+    crBag=CR_DONE.slice();
+    for (let i=crBag.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      const t=crBag[i]; crBag[i]=crBag[j]; crBag[j]=t;
+    }
+  }
+  return crBag.pop();
+}
 const CR_HUE=[344,18,40,166,196,258,320];
 const CR_MAX=MOBILE?8:12;
 const CR_COLS=40;
@@ -3970,6 +4039,7 @@ let crBlocks=[],crDust=[],crSparks=[],crSmoke=[],crFlash=[],crRollers=[],crWalls
 let crL=0,crR=0,crTop=0,crRollY=0,crRad=0,crGap=0,crCx=0,crPanY=0,crPanH=0,crTrayT=0,crTrayB=0,crSlot=0;
 let crRunning=false,crBoost=false,crSpin=0,crGrab=null,crPX=0,crPY=0,crShake=0,crBelt=0;
 let crTotal=0,crEnergy=0,crCharge=0,crPress=0,crLoad=0,crClankT=0,crLineT=null,crHadWork=false,crDown=false;
+let crIdle=0,crJolts=0;
 let crNoise=null,crNoiseG=null,crNoiseF=null;
 
 /* ---------- 几何 ---------- */
@@ -3995,7 +4065,7 @@ function crFit(){
            crMkWall(crR,crTop,rx+crRad*0.707,crRollY-crRad*0.707,-1)];
   if (crHeight.length!==CR_COLS) crHeight=new Array(CR_COLS).fill(0);
 }
-function crBW(){ return Math.min((crR-crL)*0.34,128); }
+function crBW(){ return Math.min((crR-crL)*0.31,116); }
 function crTrayL(){ return crL+10; }
 function crTrayR(){ return crR-10; }
 function crColW(){ return (crTrayR()-crTrayL())/CR_COLS; }
@@ -4107,6 +4177,7 @@ function crShatter(b){
   crBlocks.splice(i,1);
   if (crGrab===b) crGrab=null;
   crShake=Math.min(11,crShake+(b.stage===0?6.2:2.6));
+  crIdle=0; crJolts=0;                         /* 有进展就重置防卡计时 */
   crCrack(b.stage===0?1:.45);
   crFlash.push({x:b.x,y:b.y,r:Math.max(b.hw,b.hh)*(b.stage===0?1.1:.7),
     mr:Math.max(b.hw,b.hh)*(b.stage===0?4.2:2.2),a:b.stage===0?.85:.5,hue:b.hue});
@@ -4270,6 +4341,11 @@ function crStep(dt){
     for (const R of crRollers) if (crRollHit(b,R,st)) touch=true;
     const inNip=b.y>crRollY-crRad*.62&&Math.abs(b.x-crCx)<nipW;
     const tooBig=Math.min(b.hw,b.hh)*2>crGap*.86;
+    /* 过不去的料就卡在咬合线上被慢慢磨掉，不许整块漏下去 */
+    if (tooBig&&b!==crGrab&&Math.abs(b.x-crCx)<nipW){
+      const lim=crRollY+crRad*.12;
+      if (b.y+b.hh>lim){ b.y=lim-b.hh; if (b.vy>0) b.vy*=-.08; }
+    }
     if (touch&&inNip&&crSpin>.06&&tooBig){
       b.hp-=crSpin*st*.0165;
       b.sq=Math.min(1,b.sq+.34*st);
@@ -4354,6 +4430,27 @@ function crStep(dt){
     if (f.a<=0) crFlash.splice(i,1);
   }
 
+  /* 防搭桥：两块料各靠一边斗壁互相顶住就会架成拱，机器空转不出活。
+     真机靠振动给料器解决，这里就抖一下并把料错开 */
+  if (crRunning&&crSpin>.55&&crBlocks.length) crIdle+=dt; else crIdle=0;
+  if (crIdle>620){
+    crIdle=0;
+    crJolts=Math.min(5,crJolts+1);
+    const f=1+crJolts*.45;                     /* 一直卡就一次比一次狠 */
+    for (const b of crBlocks){
+      if (b===crGrab) continue;
+      /* 先抬离斗壁再横向乱踢，让这堆料重新落一次；
+         千万别往两边推，那是把拱顶顶得更死 */
+      b.y-=(1.6+Math.random()*2.2)*f;
+      b.vy=-(1.9+Math.random()*1.5)*f;
+      b.vx+=(Math.random()-.5)*5.2*f;
+      b.rv+=(Math.random()-.5)*.16;
+    }
+    crShake=Math.min(12,crShake+3.6);
+    airPuff(.07,.20,820);
+    crPuff(crCx,crRollY-crRad*.5,2,26);
+  }
+
   /* 压力表 / 震动 / 收尾 */
   let mass=0;
   for (const b of crBlocks) mass+=b.hw*b.hh*4;
@@ -4364,7 +4461,7 @@ function crStep(dt){
 
   if (!crBlocks.length&&crHadWork&&crTotal>0){
     crHadWork=false;
-    crSay(CR_DONE[Math.floor(Math.random()*CR_DONE.length)],3200);
+    crSay(crDoneLine(),3400);
     sparkleUp(); crSetRun(false);
   }
 }
@@ -4820,15 +4917,176 @@ const thermo=document.getElementById('thermo'),merc=document.getElementById('mer
 const tempNum=document.getElementById('tempNum'),warmlight=document.getElementById('warmlight');
 const bandaid=document.getElementById('bandaid');
 const nightlamp=document.getElementById('nightlamp'),lampTxt=document.getElementById('lampTxt');
-const LAMP=['阳阳，灯我给你留着。<br>睡吧，明天的事明天再说。','这盏不熄。<br>你几点回来，它都亮着。','别数了，今天够了。<br>闭眼，我在。'];
+const LAMP=['阳阳，灯我给你留着。<br>睡吧，明天的事明天再说。','这盏不熄。<br>你几点回来，它都亮着。',
+  '别数了，今天够了。<br>闭眼，我在。','雨还在下。<br>灯亮着，不用急着回。',
+  '这盏灯不问你几点。<br>它只管亮。','外面冷，这儿暖。<br>坐会儿。'];
 let nightOn=false;
+/* ---------- 夜灯：光锥 / 灯丝闪烁 / 光柱里的浮尘 ---------- */
+let lampT=0,lampFlick=1,lampMotes=[],lampFade=0;
+function lampInit(){
+  L.lamp.fit();
+  const {w,h}=L.lamp;
+  lampMotes=[];
+  const n=MOBILE?46:82;
+  for (let i=0;i<n;i++)
+    lampMotes.push({x:Math.random()*w,y:Math.random()*h,
+      vx:(Math.random()-.5)*.020,vy:-.006-Math.random()*.020,
+      r:.5+Math.random()*1.5,ph:Math.random()*6.283,sp:.0006+Math.random()*.0016});
+  lampT=0; lampFlick=1;
+}
+function drawLamp(dt){
+  const {x:ctx,w,h}=L.lamp;
+  lampT+=dt;
+  lampFade+=((nightOn?1:0)-lampFade)*.05;
+  /* 灯丝抖动：两条不同频率叠加，偶尔来一下明显的闪 */
+  const base=1+Math.sin(lampT*.0031)*.05+Math.sin(lampT*.0172)*.022;
+  lampFlick+=(base-lampFlick)*.09;
+  if (Math.random()<.004) lampFlick*=.80;
+  const k=Math.max(0,lampFlick)*lampFade;
+  ctx.clearRect(0,0,w,h);
+  if (k<=.002) return;
+
+  const cx=w/2, hy=h*.155, shW=Math.min(w*.30,132), beamW=Math.min(w*1.02,h*.95);
+
+  /* 光锥 */
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(cx-shW*.44,hy+shW*.30);
+  ctx.lineTo(cx+shW*.44,hy+shW*.30);
+  ctx.lineTo(cx+beamW*.5,h); ctx.lineTo(cx-beamW*.5,h);
+  ctx.closePath();
+  const bg=ctx.createLinearGradient(0,hy,0,h);
+  bg.addColorStop(0,'rgba(255,206,142,'+(.21*k).toFixed(3)+')');
+  bg.addColorStop(.42,'rgba(255,178,118,'+(.085*k).toFixed(3)+')');
+  bg.addColorStop(1,'rgba(255,158,108,0)');
+  ctx.fillStyle=bg; ctx.fill();
+  ctx.restore();
+
+  /* 地面光池 */
+  const pool=ctx.createRadialGradient(cx,h*.86,0,cx,h*.86,beamW*.56);
+  pool.addColorStop(0,'rgba(255,196,132,'+(.20*k).toFixed(3)+')');
+  pool.addColorStop(.55,'rgba(255,164,106,'+(.07*k).toFixed(3)+')');
+  pool.addColorStop(1,'rgba(255,150,100,0)');
+  ctx.fillStyle=pool; ctx.beginPath(); ctx.ellipse(cx,h*.86,beamW*.56,h*.20,0,0,6.283); ctx.fill();
+
+  /* 浮尘：光锥里亮，锥外几乎看不见 */
+  for (const m of lampMotes){
+    m.x+=m.vx*dt; m.y+=m.vy*dt;
+    if (m.y<-6){ m.y=h+6; m.x=Math.random()*w; }
+    if (m.x<-6) m.x=w+6; else if (m.x>w+6) m.x=-6;
+    const t=Math.max(0,Math.min(1,(m.y-hy)/Math.max(1,h-hy)));
+    const halfW=shW*.44+(beamW*.5-shW*.44)*t;
+    const inBeam=Math.max(0,1-Math.abs(m.x-cx)/Math.max(1,halfW));
+    if (inBeam<=.02) continue;
+    const tw=.45+.55*Math.sin(lampT*m.sp+m.ph);
+    ctx.fillStyle='rgba(255,226,186,'+(inBeam*tw*.50*k).toFixed(3)+')';
+    ctx.beginPath(); ctx.arc(m.x,m.y,m.r,0,6.283); ctx.fill();
+  }
+
+  /* 灯泡辉光 */
+  const gr=Math.min(w,h)*.30;
+  const bulb=ctx.createRadialGradient(cx,hy+shW*.26,0,cx,hy+shW*.26,gr);
+  bulb.addColorStop(0,'rgba(255,244,214,'+(.95*k).toFixed(3)+')');
+  bulb.addColorStop(.14,'rgba(255,212,150,'+(.52*k).toFixed(3)+')');
+  bulb.addColorStop(.46,'rgba(255,160,96,'+(.14*k).toFixed(3)+')');
+  bulb.addColorStop(1,'rgba(255,140,86,0)');
+  ctx.fillStyle=bulb;
+  ctx.beginPath(); ctx.arc(cx,hy+shW*.26,gr,0,6.283); ctx.fill();
+
+  /* 吊线 + 灯罩 */
+  ctx.strokeStyle='rgba(150,128,112,.55)'; ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,hy-shW*.26); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx-shW*.13,hy-shW*.26);
+  ctx.lineTo(cx+shW*.13,hy-shW*.26);
+  ctx.lineTo(cx+shW*.5,hy+shW*.28);
+  ctx.lineTo(cx-shW*.5,hy+shW*.28);
+  ctx.closePath();
+  const sg=ctx.createLinearGradient(cx-shW*.5,0,cx+shW*.5,0);
+  sg.addColorStop(0,'#171018'); sg.addColorStop(.30,'#3a2a28');
+  sg.addColorStop(.55,'#241a1e'); sg.addColorStop(1,'#120c14');
+  ctx.fillStyle=sg; ctx.fill();
+  ctx.strokeStyle='rgba(255,196,140,'+(.42*k).toFixed(3)+')'; ctx.lineWidth=1.4; ctx.stroke();
+  /* 灯罩下沿的亮口 */
+  ctx.beginPath(); ctx.ellipse(cx,hy+shW*.28,shW*.5,shW*.085,0,0,6.283);
+  const lip=ctx.createRadialGradient(cx,hy+shW*.28,0,cx,hy+shW*.28,shW*.5);
+  lip.addColorStop(0,'rgba(255,242,208,'+(.92*k).toFixed(3)+')');
+  lip.addColorStop(1,'rgba(255,178,110,'+(.30*k).toFixed(3)+')');
+  ctx.fillStyle=lip; ctx.fill();
+}
+/* ---------- 夜灯音景：开关声 + 雨声底噪 + 灯丝低鸣 ---------- */
+let lampNoise=null,lampRainG=null,lampRainF=null,lampHum=[],lampHumG=null,lampLfo=null;
+function lampClick(on){
+  const ac=audio(),T=ac.currentTime;
+  const len=Math.floor(ac.sampleRate*.05);
+  const b=ac.createBuffer(1,len,ac.sampleRate),d=b.getChannelData(0);
+  for (let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,7);
+  const s=ac.createBufferSource(); s.buffer=b;
+  const f=ac.createBiquadFilter(); f.type='highpass'; f.frequency.value=on?1800:1400;
+  const g=ac.createGain(); g.gain.value=.16;
+  s.connect(f); f.connect(g); g.connect(sfxGain); s.start(T); s.stop(T+.06);
+  blip(on?128:96,.06,'square',.05);
+}
+function lampAudioOn(){
+  const ac=audio();
+  if (lampNoise) return;
+  const len=Math.floor(ac.sampleRate*3);
+  const b=ac.createBuffer(1,len,ac.sampleRate),d=b.getChannelData(0);
+  for (let i=0;i<len;i++) d[i]=Math.random()*2-1;
+  lampNoise=ac.createBufferSource(); lampNoise.buffer=b; lampNoise.loop=true;
+  lampRainF=ac.createBiquadFilter(); lampRainF.type='bandpass';
+  lampRainF.frequency.value=1150; lampRainF.Q.value=.55;
+  lampRainG=ac.createGain(); lampRainG.gain.value=0;
+  lampRainG.gain.linearRampToValueAtTime(.055,ac.currentTime+2.4);
+  /* 雨势起伏：慢 LFO 推着带通走 */
+  lampLfo=ac.createOscillator(); lampLfo.type='sine'; lampLfo.frequency.value=.06;
+  const lfoG=ac.createGain(); lfoG.gain.value=260;
+  lampLfo.connect(lfoG); lfoG.connect(lampRainF.frequency); lampLfo.start();
+  lampNoise.connect(lampRainF); lampRainF.connect(lampRainG); lampRainG.connect(sfxGain);
+  lampNoise.start();
+  /* 灯丝低鸣：两个略微失谐的低音 */
+  lampHumG=ac.createGain(); lampHumG.gain.value=0;
+  lampHumG.gain.linearRampToValueAtTime(.020,ac.currentTime+1.8);
+  const hlp=ac.createBiquadFilter(); hlp.type='lowpass'; hlp.frequency.value=260;
+  lampHum=[];
+  [99.5,100.7,201.3].forEach((f,i)=>{
+    const o=ac.createOscillator(); o.type=i===2?'sine':'triangle'; o.frequency.value=f;
+    const g=ac.createGain(); g.gain.value=i===2?.22:1;
+    o.connect(g); g.connect(hlp); o.start(); lampHum.push(o);
+  });
+  hlp.connect(lampHumG); lampHumG.connect(sfxGain);
+}
+function lampAudioOff(){
+  if (!lampNoise) return;
+  const ac=audio(),T=ac.currentTime;
+  try{
+    lampRainG.gain.cancelScheduledValues(T);
+    lampRainG.gain.setValueAtTime(lampRainG.gain.value,T);
+    lampRainG.gain.linearRampToValueAtTime(0,T+.9);
+    lampHumG.gain.cancelScheduledValues(T);
+    lampHumG.gain.setValueAtTime(lampHumG.gain.value,T);
+    lampHumG.gain.linearRampToValueAtTime(0,T+.7);
+    lampNoise.stop(T+1.0);
+    lampHum.forEach(o=>o.stop(T+.8));
+    lampLfo.stop(T+1.0);
+  }catch(e){}
+  lampNoise=null; lampRainG=null; lampRainF=null; lampHumG=null; lampHum=[]; lampLfo=null;
+}
 function nightEnter(){
   nightOn=true;
   lampTxt.innerHTML=LAMP[Math.floor(Math.random()*LAMP.length)];
-  nightlamp.classList.add('show'); musicDuck(.30);
-  bell(261.63,.12,2.2); setTimeout(()=>bell(196,.10,2.6),420);
+  nightlamp.classList.add('show'); musicDuck(.26);
+  lampInit(); lampAudioOn(); lampClick(true);
+  setTimeout(()=>bell(261.63,.10,2.6),140);
+  setTimeout(()=>bell(329.63,.075,3.0),620);
+  setTimeout(()=>bell(196,.065,3.6),1180);
 }
-function nightExit(){ if (!nightOn) return; nightOn=false; nightlamp.classList.remove('show'); musicDuck(.85); chime(); }
+function nightExit(){
+  if (!nightOn) return;
+  nightOn=false; nightlamp.classList.remove('show'); musicDuck(.85);
+  lampClick(false); lampAudioOff();
+  setTimeout(()=>bell(392,.075,1.6),120);
+}
 nightlamp.addEventListener('click',e=>{ e.stopPropagation(); nightExit(); });
 
 /* 点击烟花 */
@@ -4939,6 +5197,7 @@ function loop(now){
   const dt=Math.min(now-last,50); last=now;
   const t=now/1000;
   if ((++actTick&7)===0) updateActive();
+  if (nightOn||lampFade>.004) drawLamp(dt);
   if (ovOpen===crushOv) drawCrush(dt);
   else if (ovOpen===roseOv) drawRose(dt);
   else if (ovOpen===monOv) drawMon(dt);
