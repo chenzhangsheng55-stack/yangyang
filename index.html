@@ -160,7 +160,7 @@ body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans S
 .fog-done.on{opacity:1}
 
 /* ---- 压力粉碎机 ---- */
-#crushOv{background:#e9edf3}
+#crushOv{background:#e6dce4}
 #crushOv .ov-close{background:rgba(168,54,95,.10);border-color:rgba(168,54,95,.3);color:#a8365f}
 .cr-top{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 52px);transform:translateX(-50%);
   z-index:5;width:min(520px,93vw);display:flex;flex-direction:column;align-items:center;gap:8px}
@@ -2667,6 +2667,9 @@ const SHAPE_NAMES=['星云','心','旋涡','星环','晶格','圣诞树','汽车
                    '冰淇淋','棒棒糖','排球','针管','咖啡杯',
                    '香蕉','书包','圣诞老人','小猫','小鸭','熊猫','企鹅','机器人','雪人','兔子'];
 const SHAPE_N=SHAPE_NAMES.length;
+/* 实体形态：法线打光 + 深度遮挡，看着是个真东西；
+   气态形态（星云/旋涡/星环/晶格）保留叠加发光和拖尾 */
+const SHAPE_SOLID=SHAPE_NAMES.map((_,i)=>i>=5||i===1||i===9);
 const gxShapeEl=document.getElementById('gxShape'),gxGestEl=document.getElementById('gxGest');
 const gxFaceEl=document.getElementById('gxFace'),gxCountEl=document.getElementById('gxCount');
 const gxShoutEl=document.getElementById('gxShout');
@@ -2680,33 +2683,57 @@ function pickPart(parts){
   for (const p of parts){ r-=p[0]; if (r<=0) return p[1](); }
   return parts[parts.length-1][1]();
 }
-/* 长方体表面取点 */
+/* 长方体表面取点（带面法线） */
 function boxPt(cx,cy,cz,sx,sy,sz,col){
   const ax=sy*sz, ay=sx*sz, az=sx*sy;
   const t=Math.random()*(ax+ay+az)*2;
-  let x,y,z;
-  if (t<ax*2){ x=cx+(t<ax?-1:1)*sx/2; y=cy+rnd(-sy/2,sy/2); z=cz+rnd(-sz/2,sz/2); }
-  else if (t<ax*2+ay*2){ y=cy+((t-ax*2)<ay?-1:1)*sy/2; x=cx+rnd(-sx/2,sx/2); z=cz+rnd(-sz/2,sz/2); }
-  else { z=cz+((t-ax*2-ay*2)<az?-1:1)*sz/2; x=cx+rnd(-sx/2,sx/2); y=cy+rnd(-sy/2,sy/2); }
-  return {p:[x,y,z],c:col};
+  let x,y,z,n;
+  if (t<ax*2){ const s=t<ax?-1:1; x=cx+s*sx/2; y=cy+rnd(-sy/2,sy/2); z=cz+rnd(-sz/2,sz/2); n=[s,0,0]; }
+  else if (t<ax*2+ay*2){ const s=(t-ax*2)<ay?-1:1; y=cy+s*sy/2; x=cx+rnd(-sx/2,sx/2); z=cz+rnd(-sz/2,sz/2); n=[0,s,0]; }
+  else { const s=(t-ax*2-ay*2)<az?-1:1; z=cz+s*sz/2; x=cx+rnd(-sx/2,sx/2); y=cy+rnd(-sy/2,sy/2); n=[0,0,s]; }
+  return {p:[x,y,z],n:n,c:col};
 }
-/* 圆柱侧面（做轮子/树干） */
+/* 圆柱：侧面 + 两个端盖，按面积配比，带法线 */
 function cylPt(cx,cy,cz,r,len,axis,col){
-  const a=Math.random()*6.283, rr=r*(Math.random()<.72?1:Math.sqrt(Math.random()));
-  const u=rnd(-len/2,len/2);
-  if (axis==='z') return {p:[cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,cz+u],c:col};
-  if (axis==='x') return {p:[cx+u,cy+Math.sin(a)*rr,cz+Math.cos(a)*rr],c:col};
-  return {p:[cx+Math.cos(a)*rr,cy+u,cz+Math.sin(a)*rr],c:col};
+  const capP=r/(len+r);
+  const a=Math.random()*6.283, ca=Math.cos(a), sa=Math.sin(a);
+  let u,rr,nu,nr;
+  if (Math.random()<capP){ const s=Math.random()<.5?-1:1; u=s*len/2; rr=r*Math.sqrt(Math.random()); nu=s; nr=0; }
+  else { u=rnd(-len/2,len/2); rr=r; nu=0; nr=1; }
+  if (axis==='z') return {p:[cx+ca*rr,cy+sa*rr,cz+u],n:[ca*nr,sa*nr,nu],c:col};
+  if (axis==='x') return {p:[cx+u,cy+sa*rr,cz+ca*rr],n:[nu,sa*nr,ca*nr],c:col};
+  return {p:[cx+ca*rr,cy+u,cz+sa*rr],n:[ca*nr,nu,sa*nr],c:col};
 }
 function spherePt(cx,cy,cz,r,col,squashY){
+  const q=squashY||1;
   const u=Math.random()*2-1,th=Math.random()*6.283,s=Math.sqrt(Math.max(0,1-u*u));
-  return {p:[cx+s*Math.cos(th)*r, cy+u*r*(squashY||1), cz+s*Math.sin(th)*r],c:col};
+  const dx=s*Math.cos(th),dy=u,dz=s*Math.sin(th);
+  const ny=dy/(q*q), nl=Math.hypot(dx,ny,dz)||1;
+  return {p:[cx+dx*r, cy+dy*r*q, cz+dz*r],n:[dx/nl,ny/nl,dz/nl],c:col};
 }
-/* 圆锥面（树/屋顶） */
+/* 圆锥面（树/屋顶）：底面半径 rBase，向上收到 h 高的尖 */
 function conePt(cx,cy,cz,rBase,h,col){
   const t=Math.sqrt(Math.random());
   const r=rBase*(1-t), a=Math.random()*6.283;
-  return {p:[cx+Math.cos(a)*r, cy+t*h, cz+Math.sin(a)*r],c:col};
+  const ca=Math.cos(a),sa=Math.sin(a);
+  const k=rBase/h, nl=Math.hypot(1,k)||1;
+  return {p:[cx+ca*r, cy+t*h, cz+sa*r],n:[ca/nl,k/nl,sa/nl],c:col};
+}
+/* 任意方向的锥形管：胡须、树枝、耳朵、尾巴、胡萝卜都用它，比平面撒点真实 */
+function tubePt(x0,y0,z0,x1,y1,z1,r0,r1,col){
+  const dx=x1-x0,dy=y1-y0,dz=z1-z0,len=Math.hypot(dx,dy,dz)||1e-4;
+  const ax=dx/len,ay=dy/len,az=dz/len;
+  let ux,uy,uz;
+  if (Math.abs(ax)<.9){ ux=0; uy=-az; uz=ay; } else { ux=-az; uy=0; uz=ax; }
+  const ul=Math.hypot(ux,uy,uz)||1; ux/=ul; uy/=ul; uz/=ul;
+  const vx=ay*uz-az*uy, vy=az*ux-ax*uz, vz=ax*uy-ay*ux;
+  const t=Math.random(), a=Math.random()*6.283, ca=Math.cos(a), sa=Math.sin(a);
+  const r=r0+(r1-r0)*t;
+  const rx=ux*ca+vx*sa, ry=uy*ca+vy*sa, rz=uz*ca+vz*sa;
+  const k=(r0-r1)/len;
+  const nx=rx+ax*k, ny=ry+ay*k, nz=rz+az*k;
+  const nl=Math.hypot(nx,ny,nz)||1;
+  return {p:[x0+dx*t+rx*r, y0+dy*t+ry*r, z0+dz*t+rz*r],n:[nx/nl,ny/nl,nz/nl],c:col};
 }
 function gxHeartField(x,y,z){
   const a=x*x+2.25*y*y+z*z-1;
@@ -2783,18 +2810,20 @@ function gxShapePoint(kind,i,n){
         const base=[4.6,3.5,2.4][lv], y0=[-5.0,-1.6,1.4][lv], hh=[4.0,3.4,2.8][lv];
         return conePt(0,y0,0,base,hh,C.deepGreen);
       }],
-      [10,()=>{                               /* 螺旋彩带 */
+      [10,()=>{                               /* 螺旋彩带：有粗细的绳，不是一条线 */
         const t=Math.random();
-        const y=-5.0+t*9.2, r=(4.4)*(1-t*.86);
-        const a=t*26;
-        return {p:[Math.cos(a)*r,y,Math.sin(a)*r],c:C.gold};
+        const seg=(tt)=>{ const y=-5.0+tt*9.2, r=4.4*(1-tt*.86), a=tt*26;
+                          return [Math.cos(a)*r,y,Math.sin(a)*r]; };
+        const t1=Math.min(1,t+.012);
+        const A=seg(t),B=seg(t1);
+        return tubePt(A[0],A[1],A[2],B[0],B[1],B[2],.20,.20,C.gold);
       }],
-      [10,()=>{                               /* 彩球 */
+      [10,()=>{                               /* 彩球：真的小球 */
         const t=Math.random();
-        const y=-4.6+t*8.4, r=(4.3)*(1-t*.84)*rnd(.86,1.0);
+        const y=-4.6+t*8.4, r=4.3*(1-t*.84)*rnd(.86,1.0);
         const a=Math.random()*6.283;
         const cols=[C.red,C.gold,C.ice,C.pink];
-        return {p:[Math.cos(a)*r,y,Math.sin(a)*r],c:cols[Math.floor(Math.random()*4)]};
+        return spherePt(Math.cos(a)*r,y,Math.sin(a)*r,.34,cols[Math.floor(Math.random()*4)]);
       }],
       [8,()=>cylPt(0,-6.2,0,.75,2.4,'y',C.brown)],
       [14,()=>{                               /* 顶上的星 */
@@ -2828,14 +2857,15 @@ function gxShapePoint(kind,i,n){
   case 7:{                                    /* 房屋 */
     return pickPart([
       [34,()=>boxPt(0,-1.6,0,8.2,5.2,7.0,C.cream)],          /* 墙体 */
-      [26,()=>{                                              /* 人字屋顶 */
+      [26,()=>{                                              /* 人字屋顶：两个斜面，法线沿坡朝外 */
         const t=Math.random(), side=Math.random()<.5?-1:1;
         const x=side*(4.9*(1-t)), y=1.0+t*3.4, z=rnd(-3.6,3.6);
-        return {p:[x,y,z],c:C.roof};
+        const nl=Math.hypot(3.4,4.9);
+        return {p:[x,y,z],n:[side*3.4/nl,4.9/nl,0],c:C.roof};
       }],
-      [6,()=>{                                               /* 山墙 */
+      [6,()=>{                                               /* 山墙：前后两片三角面 */
         const side=Math.random()<.5?-1:1, t=Math.random(), u=rnd(-1,1)*(1-t);
-        return {p:[u*4.9,1.0+t*3.4,side*3.55],c:C.roof};
+        return {p:[u*4.9,1.0+t*3.4,side*3.55],n:[0,0,side],c:C.roof};
       }],
       [8,()=>boxPt(0,-2.9,3.55,1.9,2.9,.16,C.brown)],        /* 门 */
       [10,()=>{                                              /* 两扇窗 */
@@ -2843,9 +2873,7 @@ function gxShapePoint(kind,i,n){
         return boxPt(wx,-.9,3.55,1.7,1.7,.16,C.warm);
       }],
       [8,()=>boxPt(-2.6,3.6,-1.2,1.1,2.4,1.1,C.grey)],       /* 烟囱 */
-      [8,()=>{                                               /* 屋脊 */
-        return {p:[rnd(-.18,.18),4.45,rnd(-3.6,3.6)],c:C.gold};
-      }]
+      [8,()=>cylPt(0,4.45,0,.22,7.2,'z',C.gold)]             /* 屋脊压瓦 */
     ]);
   }
   case 8:{                                    /* 苹果 */
@@ -3038,15 +3066,8 @@ function gxShapePoint(kind,i,n){
         if (y>0.6||z<0) return {p:[x,1.2+y*.9,z+1.0],c:C.white};
         return {p:[x,1.1+y,z+0.9],c:C.white};
       }],
-      [12,()=>{                                             /* 红帽子 */
-        const t=Math.sqrt(Math.random());
-        const r=2.1*(1-t), a=Math.random()*6.283;
-        return {p:[Math.cos(a)*r-t*1.2, 3.9+t*3.0, Math.sin(a)*r],c:C.santaRed};
-      }],
-      [6,()=>{                                              /* 帽檐 */
-        const a=Math.random()*6.283;
-        return {p:[Math.cos(a)*2.25,3.85+rnd(-.35,.35),Math.sin(a)*2.25],c:C.white};
-      }],
+      [12,()=>tubePt(0,3.9,0, -1.2,6.9,0, 2.1,.22, C.santaRed)],    /* 红帽尖 */
+      [6,()=>cylPt(0,3.85,0,2.28,.72,'y',C.white)],                 /* 白帽檐 */
       [4,()=>spherePt(-3.4,6.6,0,.85,C.white)],             /* 绒球 */
       [8,()=>{                                              /* 腰带 */
         const a=Math.random()*6.283;
@@ -3067,36 +3088,45 @@ function gxShapePoint(kind,i,n){
     return pickPart([
       [24,()=>spherePt(0,-2.4,0,3.1,C.catOrange)],          /* 身体 */
       [22,()=>spherePt(0,1.9,0,2.6,C.catOrange)],           /* 头 */
-      [10,()=>{                                             /* 三角耳 */
-        const side=Math.random()<.5?-1:1, t=Math.random();
-        const w=1.25*(1-t);
-        return {p:[side*1.5+rnd(-w,w), 3.9+t*2.0, rnd(-.35,.35)],
-          c:t>.45?C.catPink:C.catOrange};
+      [10,()=>{                                             /* 立体三角耳：外耳锥 + 粉内耳 */
+        const side=Math.random()<.5?-1:1;
+        return Math.random()<.34
+          ? tubePt(side*1.35,3.3,.25, side*2.05,5.7,.05, .42,.06, C.catPink)
+          : tubePt(side*1.45,3.2,0, side*2.15,5.9,0, .78,.10, C.catOrange);
       }],
       [8,()=>{                                              /* 白肚皮 */
         const u=Math.random()*2-1,th=Math.random()*6.283,s=Math.sqrt(Math.max(0,1-u*u));
-        return {p:[s*Math.cos(th)*1.9, -2.6+u*1.9, 2.0+s*Math.sin(th)*.6],c:C.white};
+        const dx=s*Math.cos(th),dy=u,dz=s*Math.sin(th);
+        const nl=Math.hypot(dx,dy,dz*1.6)||1;
+        return {p:[dx*1.9, -2.6+dy*1.9, 2.0+dz*.6],n:[dx/nl,dy/nl,(dz*1.6)/nl],c:C.white};
       }],
-      [8,()=>{                                              /* 尾巴 */
-        const t=Math.random(), a=t*2.6;
-        return {p:[3.0+Math.sin(a)*2.6, -3.6+t*3.6, rnd(-.4,.4)],c:C.catOrange};
+      [8,()=>{                                              /* 尾巴：分段弯管，有粗细 */
+        const t=Math.random(), k=Math.min(3,Math.floor(t*4));
+        const P=[[2.6,-4.0,0],[4.4,-3.2,.2],[5.4,-1.5,.3],[5.2,.4,.2],[4.2,1.6,0]];
+        const r0=[.62,.56,.50,.44], r1=[.56,.50,.44,.36];
+        return tubePt(P[k][0],P[k][1],P[k][2],P[k+1][0],P[k+1][1],P[k+1][2],r0[k],r1[k],C.catOrange);
       }],
       [6,()=>{                                              /* 眼睛 */
         const side=Math.random()<.5?-1:1;
         return spherePt(side*1.0,2.3,2.35,.42,C.beltBlack);
       }],
       [3,()=>spherePt(0,1.4,2.55,.32,C.catPink)],           /* 鼻子 */
-      [5,()=>{                                              /* 胡须 */
-        const side=Math.random()<.5?-1:1, t=Math.random();
-        return {p:[side*(1.0+t*2.6), 1.3+rnd(-.5,.5), 2.1],c:C.white};
+      [5,()=>{                                              /* 胡须：六根细管，从嘴边散出去 */
+        const side=Math.random()<.5?-1:1, k=Math.floor(Math.random()*3);
+        const dy=[.55,0,-.5][k];
+        return tubePt(side*.55,1.35,2.3, side*3.5,1.35+dy*1.6,1.5, .075,.035, C.white);
       }],
       [6,()=>{                                              /* 爪子 */
         const side=Math.random()<.5?-1.5:1.5;
         return spherePt(side,-5.0,1.5,.85,C.white);
       }],
-      [4,()=>{                                              /* 条纹 */
-        const t=Math.random();
-        return {p:[rnd(-2.4,2.4), 2.6+t*1.2, 2.0],c:C.catDark};
+      [4,()=>{                                              /* 条纹：贴在头顶球面上的暗色带 */
+        for (let k=0;k<8;k++){
+          const s=spherePt(0,1.9,0,2.62,C.catDark);
+          const band=Math.abs(((s.p[0]*1.15)%1.7)-.85);
+          if (s.p[1]>2.6&&s.p[2]<1.4&&band<.30) return s;
+        }
+        return spherePt(0,1.9,0,2.62,C.catDark);
       }]
     ]);
   }
@@ -3104,25 +3134,38 @@ function gxShapePoint(kind,i,n){
     return pickPart([
       [34,()=>spherePt(0,-2.0,0,3.6,C.duckYellow,0.86)],    /* 身体 */
       [22,()=>spherePt(0,2.6,0.4,2.4,C.duckYellow)],        /* 头 */
-      [8,()=>{                                              /* 扁嘴 */
-        const t=Math.random();
-        return {p:[rnd(-1.0,1.0), 2.1+rnd(-.28,.28), 2.4+t*1.8],c:C.duckBeak};
+      [8,()=>{                                              /* 扁嘴：上下压扁的椭球，前端收窄 */
+        const s=spherePt(0,2.15,3.15,1.0,C.duckBeak);
+        const t=(s.p[2]-2.15)/2.0;
+        s.p[0]*=1.05-t*.35; s.p[1]=2.15+(s.p[1]-2.15)*.34;
+        const nl=Math.hypot(s.n[0],s.n[1]*2.9,s.n[2])||1;
+        s.n=[s.n[0]/nl,(s.n[1]*2.9)/nl,s.n[2]/nl];
+        return s;
       }],
       [6,()=>{                                              /* 眼睛 */
         const side=Math.random()<.5?-1:1;
         return spherePt(side*0.95,3.1,2.0,.34,C.beltBlack);
       }],
-      [10,()=>{                                             /* 翅膀 */
-        const side=Math.random()<.5?-1:1, t=Math.random();
-        return {p:[side*(3.0+t*.8), -1.6+rnd(-1.4,1.4), rnd(-1.2,1.2)],c:C.duckWing};
+      [10,()=>{                                             /* 翅膀：贴在身侧的扁椭球 */
+        const side=Math.random()<.5?-1:1;
+        const s=spherePt(side*3.05,-1.5,.1,1.85,C.duckWing);
+        s.p[0]=side*3.05+(s.p[0]-side*3.05)*.34;
+        s.p[2]=.1+(s.p[2]-.1)*1.05;
+        const nl=Math.hypot(s.n[0]*2.9,s.n[1],s.n[2])||1;
+        s.n=[(s.n[0]*2.9)/nl,s.n[1]/nl,s.n[2]/nl];
+        return s;
       }],
-      [6,()=>{                                              /* 尾巴 */
-        const t=Math.random();
-        return {p:[rnd(-1.1,1.1), -0.4+t*1.6, -3.4-t*1.4],c:C.duckYellow};
+      [6,()=>{                                              /* 上翘的尾羽 */
+        const side=Math.random()<.5?-1:1;
+        return tubePt(0,-1.0,-2.8, side*.9,1.3,-4.6, .85,.14, C.duckYellow);
       }],
       [6,()=>{                                              /* 脚蹼 */
         const side=Math.random()<.5?-1.3:1.3;
-        return {p:[side+rnd(-.9,.9), -5.6, rnd(-.2,1.6)],c:C.duckBeak};
+        const s=spherePt(side,-5.5,.7,1.15,C.duckBeak);
+        s.p[1]=-5.5+(s.p[1]+5.5)*.22;
+        const nl=Math.hypot(s.n[0],s.n[1]*4.5,s.n[2])||1;
+        s.n=[s.n[0]/nl,(s.n[1]*4.5)/nl,s.n[2]/nl];
+        return s;
       }]
     ]);
   }
@@ -3146,9 +3189,11 @@ function gxShapePoint(kind,i,n){
         return arm? spherePt(side*3.1,-1.6,.6,1.15,C.beltBlack)
                   : spherePt(side*1.7,-5.4,.8,1.25,C.beltBlack);
       }],
-      [4,()=>{                                              /* 竹叶 */
-        const t=Math.random();
-        return {p:[3.6+t*2.2, -0.6+t*1.8, 1.2+rnd(-.5,.5)],c:C.green};
+      [4,()=>{                                              /* 竹子：一根竹节 + 三片叶 */
+        if (Math.random()<.55) return tubePt(3.4,-1.4,1.2, 5.9,1.9,1.0, .17,.15, C.deepGreen);
+        const k=Math.floor(Math.random()*3), a=[.5,1.0,1.6][k];
+        return tubePt(5.2+k*.25,1.0+k*.35,1.05, 5.2+k*.25+Math.cos(a)*1.7,1.0+k*.35+Math.sin(a)*1.3,1.05,
+                      .05,.20, C.leaf);
       }]
     ]);
   }
@@ -3164,21 +3209,26 @@ function gxShapePoint(kind,i,n){
         const u=Math.random()*2-1,th=Math.random()*6.283,s=Math.sqrt(Math.max(0,1-u*u));
         return {p:[s*Math.cos(th)*1.5, 3.2+u*1.5, 1.5+s*Math.sin(th)*.5],c:C.white};
       }],
-      [5,()=>{                                              /* 橙喙 */
-        const t=Math.random();
-        return {p:[rnd(-.55,.55)*(1-t), 3.1+rnd(-.3,.3), 2.0+t*1.5],c:C.duckBeak};
-      }],
+      [5,()=>tubePt(0,3.15,1.7, 0,2.95,3.5, .46,.06, C.duckBeak)],  /* 橙喙：真锥体 */
       [5,()=>{                                              /* 眼睛 */
         const side=Math.random()<.5?-1:1;
         return spherePt(side*.85,3.9,1.85,.28,C.white);
       }],
-      [10,()=>{                                             /* 鳍 */
-        const side=Math.random()<.5?-1:1, t=Math.random();
-        return {p:[side*(3.2+t*.7), -1.0-t*2.4, rnd(-.5,.5)],c:C.beltBlack};
+      [10,()=>{                                             /* 鳍：贴身侧的扁桨 */
+        const side=Math.random()<.5?-1:1;
+        const s=tubePt(side*3.0,-0.6,0, side*3.7,-4.0,.2, .95,.34, C.beltBlack);
+        s.p[0]=side*3.2+(s.p[0]-side*3.2)*.30;
+        const nl=Math.hypot(s.n[0]*3.2,s.n[1],s.n[2])||1;
+        s.n=[(s.n[0]*3.2)/nl,s.n[1]/nl,s.n[2]/nl];
+        return s;
       }],
-      [6,()=>{                                              /* 橙脚 */
+      [6,()=>{                                              /* 橙脚：压扁的蹼 */
         const side=Math.random()<.5?-1.3:1.3;
-        return {p:[side+rnd(-.8,.8), -5.2, rnd(-.2,1.5)],c:C.duckBeak};
+        const s=spherePt(side,-5.1,.6,1.1,C.duckBeak);
+        s.p[1]=-5.1+(s.p[1]+5.1)*.20;
+        const nl=Math.hypot(s.n[0],s.n[1]*5.0,s.n[2])||1;
+        s.n=[s.n[0]/nl,(s.n[1]*5.0)/nl,s.n[2]/nl];
+        return s;
       }]
     ]);
   }
@@ -3190,13 +3240,14 @@ function gxShapePoint(kind,i,n){
         const side=Math.random()<.5?-1:1;
         return spherePt(side*1.15,3.1,1.75,.55,C.robotEye);
       }],
-      [4,()=>{                                              /* 嘴：一排格栅 */
-        return {p:[rnd(-1.3,1.3), 1.7+rnd(-.12,.12), 1.75],c:C.robotEye};
+      [4,()=>{                                              /* 嘴：五格立体格栅 */
+        const k=Math.floor(Math.random()*5);
+        return boxPt(-1.12+k*.56,1.7,1.76,.34,.42,.22,C.robotEye);
       }],
       [5,()=>{                                              /* 天线 */
-        const t=Math.random();
-        return t<.75? {p:[rnd(-.16,.16), 4.8+t*2.0, rnd(-.16,.16)],c:C.grey}
-                    : spherePt(0,7.0,0,.55,C.red);
+        return Math.random()<.72
+          ? tubePt(0,4.7,0, 0,6.7,0, .11,.08, C.grey)
+          : spherePt(0,7.0,0,.55,C.red);
       }],
       [14,()=>{                                             /* 手臂 */
         const side=Math.random()<.5?-1:1;
@@ -3218,10 +3269,7 @@ function gxShapePoint(kind,i,n){
       [30,()=>spherePt(0,-4.2,0,3.4,C.white)],              /* 下球 */
       [24,()=>spherePt(0,0.2,0,2.6,C.white)],               /* 中球 */
       [18,()=>spherePt(0,3.9,0,1.9,C.white)],               /* 头 */
-      [4,()=>{                                              /* 胡萝卜鼻 */
-        const t=Math.random();
-        return {p:[rnd(-.28,.28)*(1-t), 3.8+rnd(-.2,.2)*(1-t), 1.7+t*1.7],c:C.duckBeak};
-      }],
+      [4,()=>tubePt(0,3.85,1.5, 0,3.7,3.5, .34,.04, C.duckBeak)],   /* 胡萝卜鼻：真锥体 */
       [4,()=>{                                              /* 眼睛 */
         const side=Math.random()<.5?-1:1;
         return spherePt(side*.72,4.4,1.55,.26,C.beltBlack);
@@ -3230,20 +3278,26 @@ function gxShapePoint(kind,i,n){
         const k=Math.floor(Math.random()*3);
         return spherePt(0,0.9-k*1.2,2.4,.3,C.beltBlack);
       }],
-      [8,()=>{                                              /* 树枝手臂 */
-        const side=Math.random()<.5?-1:1, t=Math.random();
-        return {p:[side*(2.6+t*3.0), 0.6+t*1.6+rnd(-.2,.2), rnd(-.2,.2)],c:C.brown};
+      [8,()=>{                                              /* 树枝手臂：主枝 + 两根分叉 */
+        const side=Math.random()<.5?-1:1, q=Math.random();
+        if (q<.62) return tubePt(side*2.3,0.7,0, side*5.4,2.3,0, .17,.10, C.brown);
+        if (q<.81) return tubePt(side*4.3,1.6,0, side*5.3,3.1,.3, .09,.05, C.brown);
+        return tubePt(side*4.6,1.8,0, side*6.0,1.9,-.4, .09,.05, C.brown);
       }],
-      [6,()=>{                                              /* 礼帽 */
-        const t=Math.random();
-        return t<.35? {p:[rnd(-2.3,2.3), 5.6, rnd(-2.3,2.3)],c:C.beltBlack}
-                    : {p:[rnd(-1.5,1.5), 5.7+Math.random()*2.0, rnd(-1.5,1.5)],c:C.beltBlack};
+      [6,()=>{                                              /* 礼帽：帽筒 + 帽檐 */
+        return Math.random()<.34
+          ? cylPt(0,5.62,0,2.35,.22,'y',C.beltBlack)
+          : cylPt(0,6.65,0,1.5,2.0,'y',C.beltBlack);
       }],
-      [6,()=>{                                              /* 围巾 */
-        const a=Math.random()*6.283;
-        return Math.random()<.7
-          ? {p:[Math.cos(a)*2.05, 2.0+rnd(-.4,.4), Math.sin(a)*2.05],c:C.red}
-          : {p:[1.9+rnd(-.35,.35), 1.8-Math.random()*2.6, .8],c:C.red};
+      [6,()=>{                                              /* 围巾：绕颈一圈 + 垂下一条 */
+        if (Math.random()<.68){
+          const a=Math.random()*6.283;
+          const s=spherePt(0,2.0,0,2.05,C.red);
+          const rr=Math.hypot(s.p[0],s.p[2])||1;
+          return {p:[s.p[0]/rr*2.05, 2.0+rnd(-.42,.42), s.p[2]/rr*2.05],
+                  n:[s.p[0]/rr,0,s.p[2]/rr],c:C.red};
+        }
+        return tubePt(1.75,1.9,.8, 2.1,-.9,1.0, .30,.26, C.red);
       }]
     ]);
   }
@@ -3251,12 +3305,15 @@ function gxShapePoint(kind,i,n){
     return pickPart([
       [28,()=>spherePt(0,-2.4,0,3.2,C.white)],              /* 身体 */
       [20,()=>spherePt(0,1.9,0.2,2.4,C.white)],             /* 头 */
-      [16,()=>{                                             /* 长耳朵 */
-        const side=Math.random()<.5?-1:1, t=Math.random();
-        const w=.75*(1-t*.45);
-        const inner=Math.random()<.34;
-        return {p:[side*(0.95+t*0.7)+rnd(-w,w)*(inner?.45:1), 3.8+t*5.0, rnd(-.35,.35)],
-          c:inner?C.catPink:C.white};
+      [16,()=>{                                             /* 长耳朵：外耳管 + 粉内耳 */
+        const side=Math.random()<.5?-1:1;
+        const s=Math.random()<.34
+          ? tubePt(side*1.0,3.9,.18, side*1.75,8.6,.10, .34,.24, C.catPink)
+          : tubePt(side*0.95,3.7,0, side*1.7,8.8,0, .62,.44, C.white);
+        s.p[2]*=.55; s.n[2]*=1.8;                            /* 压扁成耳片 */
+        const nl=Math.hypot(s.n[0],s.n[1],s.n[2])||1;
+        s.n=[s.n[0]/nl,s.n[1]/nl,s.n[2]/nl];
+        return s;
       }],
       [6,()=>{                                              /* 眼睛 */
         const side=Math.random()<.5?-1:1;
@@ -3272,10 +3329,10 @@ function gxShapePoint(kind,i,n){
         return front? spherePt(side*1.5,-4.6,1.6,1.0,C.white)
                     : spherePt(side*2.5,-3.6,-0.4,1.3,C.white);
       }],
-      [4,()=>{                                              /* 胡萝卜 */
-        const t=Math.random();
-        return t<.78? {p:[3.4+t*2.0, -4.4+rnd(-.4,.4)*(1-t), 1.4],c:C.duckBeak}
-                    : {p:[5.6+rnd(-.5,.5), -3.4+Math.random()*1.4, 1.4],c:C.green};
+      [4,()=>{                                              /* 胡萝卜：锥体 + 叶梢 */
+        if (Math.random()<.76) return tubePt(3.2,-4.5,1.5, 6.1,-3.9,1.3, .52,.05, C.duckBeak);
+        const k=Math.floor(Math.random()*3);
+        return tubePt(3.2,-4.5,1.5, 2.5+k*.35,-2.9,1.5+(k-1)*.4, .10,.04, C.green);
       }]
     ]);
   }
@@ -3284,13 +3341,27 @@ function gxShapePoint(kind,i,n){
   }
 }
 function gxBuildShape(kind,n){
-  const pos=new Float32Array(n*3), col=new Float32Array(n*3);
+  const pos=new Float32Array(n*3), col=new Float32Array(n*3), nrm=new Float32Array(n*3);
+  const missing=[];
+  let sx=0,sy=0,sz=0;
   for (let i=0;i<n;i++){
     const s=gxShapePoint(kind,i,n);
     pos[i*3]=s.p[0]; pos[i*3+1]=s.p[1]; pos[i*3+2]=s.p[2];
     col[i*3]=s.c[0]; col[i*3+1]=s.c[1]; col[i*3+2]=s.c[2];
+    sx+=s.p[0]; sy+=s.p[1]; sz+=s.p[2];
+    if (s.n){ nrm[i*3]=s.n[0]; nrm[i*3+1]=s.n[1]; nrm[i*3+2]=s.n[2]; }
+    else missing.push(i);
   }
-  return {pos:pos,col:col};
+  /* 没给法线的点，用“从形体重心朝外”兜底，足够撑起体积感 */
+  const cx=sx/n, cy=sy/n, cz=sz/n;
+  for (const i of missing){
+    let dx=pos[i*3]-cx, dy=pos[i*3+1]-cy, dz=pos[i*3+2]-cz;
+    const l=Math.hypot(dx,dy,dz);
+    if (l<1e-4){ dx=0; dy=1; dz=0; }
+    else { dx/=l; dy/=l; dz/=l; }
+    nrm[i*3]=dx; nrm[i*3+1]=dy; nrm[i*3+2]=dz;
+  }
+  return {pos:pos,col:col,nrm:nrm};
 }
 function initGalaxy(){
   if (!window.THREE) return false;
@@ -3327,30 +3398,37 @@ function initGalaxy(){
   shapes[0]=gxBuildShape(0,GX_N);
 
   const uni={uTime:{value:0},uScale:{value:600},uMix:{value:1},
-    uSpread:{value:0},uSwirl:{value:0},uWarm:{value:0},uBurst:{value:0},uHue:{value:0}};
+    uSpread:{value:0},uSwirl:{value:0},uWarm:{value:0},uBurst:{value:0},uHue:{value:0},
+    uSolid:{value:0}};
   const VS='attribute vec3 aPosA; attribute vec3 aPosB; attribute vec3 aColA; attribute vec3 aColB;\
-    attribute vec3 aRand; attribute float aSize; attribute float aPhase;\
-    uniform float uTime,uScale,uMix,uSpread,uSwirl,uBurst;\
-    varying vec3 vColor; varying float vA;\
+    attribute vec3 aNrm; attribute vec3 aRand; attribute float aSize; attribute float aPhase;\
+    uniform float uTime,uScale,uMix,uSpread,uSwirl,uBurst,uSolid;\
+    varying vec3 vColor; varying float vA; varying vec3 vN;\
     void main(){\
       vec3 p=mix(aPosA,aPosB,uMix);\
       float rad=length(p.xz)+0.001;\
       float ang=uSwirl*(2.2-rad*0.11)+uTime*0.05;\
       float c=cos(ang), s=sin(ang);\
       p.xz=mat2(c,-s,s,c)*p.xz;\
+      vec3 nn=aNrm;\
+      nn.xz=mat2(c,-s,s,c)*nn.xz;\
+      vN=normalMatrix*nn;\
       vec3 dir=normalize(p+vec3(0.0001));\
       p+=dir*(uSpread*7.0+uBurst*12.0*(0.5+aRand.x));\
-      p+=aRand*(0.10+0.20*sin(uTime*1.2+aPhase));\
+      /* 实体形态几乎不抖，抖动只留给星云那类气态形态，否则表面会毛 */\
+      p+=aRand*mix(0.10+0.20*sin(uTime*1.2+aPhase),0.012,uSolid);\
       vec4 mv=modelViewMatrix*vec4(p,1.0);\
       float tw=0.72+0.28*sin(uTime*1.8+aPhase);\
-      gl_PointSize=aSize*(uScale/max(0.001,-mv.z))*(0.85+tw*0.30)*(1.0+uBurst*0.5);\
+      float pt=aSize*(uScale/max(0.001,-mv.z));\
+      gl_PointSize=pt*mix((0.85+tw*0.30),1.34,uSolid)*(1.0+uBurst*0.5);\
       vColor=mix(aColA,aColB,uMix); vA=tw;\
       gl_Position=projectionMatrix*mv;\
     }';
-  /* 程序化画圆点：中心实、边缘一圈很窄的光晕 —— 比贴图锐利得多 */
+  /* 气态：中心实 + 窄光晕、叠加发光。实体：法线打光 + 高光 + 边缘光，不透明遮挡 */
   const FS='precision mediump float;\
     uniform float uWarm,uHue;\
-    varying vec3 vColor; varying float vA;\
+    uniform highp float uSolid;\
+    varying vec3 vColor; varying float vA; varying vec3 vN;\
     vec3 hueShift(vec3 col,float a){\
       const vec3 k=vec3(0.57735);\
       float ca=cos(a);\
@@ -3364,7 +3442,23 @@ function initGalaxy(){
       float halo=exp(-d*8.0)*0.30;\
       vec3 col=mix(vColor,vec3(1.0,0.74,0.44),uWarm*0.65);\
       col=hueShift(col,uHue);\
-      gl_FragColor=vec4(col,1.0)*(core+halo)*(0.55+vA*0.60)*(1.0+uWarm*0.25);\
+      float gasA=(core+halo)*(0.55+vA*0.60)*(1.0+uWarm*0.25);\
+      vec3 N=normalize(vN);\
+      vec3 Ld=normalize(vec3(0.42,0.76,0.60));\
+      float lam=max(dot(N,Ld),0.0);\
+      float wrap=max(dot(N,-Ld),0.0);\
+      float spec=pow(max(dot(N,normalize(Ld+vec3(0.0,0.0,1.0))),0.0),26.0);\
+      float rim=pow(1.0-max(dot(N,vec3(0.0,0.0,1.0)),0.0),3.2);\
+      vec3 lit=col*(0.15+1.04*lam)\
+              +col*vec3(0.26,0.32,0.52)*wrap*0.42\
+              +vec3(1.0,0.97,0.92)*spec*0.55\
+              +mix(vec3(0.42,0.62,1.0),vec3(1.0,0.72,0.44),uWarm)*rim*0.30;\
+      /* 点精灵内部做个球面明暗，单颗也有体积，不再是一片死平的圆片 */\
+      float bulge=sqrt(max(0.0,1.0-min(1.0,d*d*4.0)));\
+      lit*=0.72+0.42*bulge;\
+      vec3 outc=mix(col*gasA,lit,uSolid);\
+      float a=mix(gasA,smoothstep(0.50,0.34,d),uSolid);\
+      gl_FragColor=vec4(outc,a);\
     }';
   const geo=new THREE.BufferGeometry();
   geo.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(GX_N*3),3));
@@ -3372,6 +3466,7 @@ function initGalaxy(){
   geo.setAttribute('aPosB',new THREE.Float32BufferAttribute(shapes[0].pos.slice(),3));
   geo.setAttribute('aColA',new THREE.Float32BufferAttribute(shapes[0].col.slice(),3));
   geo.setAttribute('aColB',new THREE.Float32BufferAttribute(shapes[0].col.slice(),3));
+  geo.setAttribute('aNrm',new THREE.Float32BufferAttribute(shapes[0].nrm.slice(),3));
   const SZ=[],PH=[],RD=[];
   for (let i=0;i<GX_N;i++){
     SZ.push(.085+Math.random()*.10);
@@ -3387,7 +3482,7 @@ function initGalaxy(){
   scene.add(new THREE.Points(geo,mat));
 
   GX={renderer:renderer,scene:scene,camera:camera,fadeScene:fadeScene,fadeCam:fadeCam,
-      uni:uni,geo:geo,shapes:shapes,needClear:true};
+      uni:uni,geo:geo,mat:mat,fadeMat:fadeMat,shapes:shapes,needClear:true,solidMode:false};
   gxCountEl.textContent=GX_N.toLocaleString();
   gxShapeEl.textContent=SHAPE_NAMES[0];
   gxResize();
@@ -3429,10 +3524,14 @@ function gxSetShape(idx){
   gxLastShape=gxShapeIdx; gxShapeIdx=idx;
   const A=GX.geo.getAttribute('aPosA'),B=GX.geo.getAttribute('aPosB');
   const CA=GX.geo.getAttribute('aColA'),CB=GX.geo.getAttribute('aColB');
+  const NR=GX.geo.getAttribute('aNrm');
   A.array.set(from.pos); A.needsUpdate=true;
   CA.array.set(from.col); CA.needsUpdate=true;
   B.array.set(to.pos); B.needsUpdate=true;
   CB.array.set(to.col); CB.needsUpdate=true;
+  /* 法线跟目标形态走：变形到一半切过去，正好和材质切换同步 */
+  GX.pendingNrm=to.nrm;
+  if (!SHAPE_SOLID[gxLastShape]){ NR.array.set(to.nrm); NR.needsUpdate=true; GX.pendingNrm=null; }
   gxMix=0;
   gxShapeEl.textContent=SHAPE_NAMES[gxShapeIdx];
   gxShout(SHAPE_NAMES[gxShapeIdx]);
@@ -3472,7 +3571,28 @@ function drawGalaxy(t,dt){
   u.uSpread.value=gxSpread; u.uSwirl.value=gxSwirl;
   u.uWarm.value=gxWarm; u.uBurst.value=gxBurst; u.uHue.value=gxHue;
 
+  /* 变形过半时切法线与渲染模式：实体走深度遮挡+不透明，气态走叠加发光 */
+  const wantSolid=SHAPE_SOLID[gxShapeIdx];
+  if (u.uMix.value>=.5&&GX.pendingNrm){
+    const NR=GX.geo.getAttribute('aNrm');
+    NR.array.set(GX.pendingNrm); NR.needsUpdate=true; GX.pendingNrm=null;
+  }
+  const flip=u.uMix.value>=.5?wantSolid:SHAPE_SOLID[gxLastShape];
+  if (flip!==GX.solidMode){
+    GX.solidMode=flip;
+    GX.mat.blending=flip?THREE.NormalBlending:THREE.AdditiveBlending;
+    GX.mat.depthTest=flip; GX.mat.depthWrite=flip;
+    GX.mat.needsUpdate=true;
+    GX.needClear=true;
+  }
+  /* 打光跟着变形进度走，不抢在几何前面亮起来 */
+  const fromSolid=SHAPE_SOLID[gxLastShape]?1:0, toSolid=wantSolid?1:0;
+  u.uSolid.value=fromSolid+(toSolid-fromSolid)*u.uMix.value;
+  /* 实体形态不留拖尾（拖尾会把硬边糊掉），气态保留 */
+  GX.fadeMat.uniforms.uOp.value+=((GX.solidMode?1:0.42)-GX.fadeMat.uniforms.uOp.value)*.12;
+
   GX.renderer.render(GX.fadeScene,GX.fadeCam);
+  if (GX.solidMode) GX.renderer.clear(false,true,false);
   GX.renderer.render(GX.scene,GX.camera);
 }
 /* ---------- 触摸 / 鼠标 ---------- */
@@ -3846,7 +3966,7 @@ const CR_HUE=[344,18,40,166,196,258,320];
 const CR_MAX=MOBILE?8:12;
 const CR_COLS=40;
 
-let crBlocks=[],crDust=[],crSparks=[],crRollers=[],crWalls=[],crHeight=[];
+let crBlocks=[],crDust=[],crSparks=[],crSmoke=[],crFlash=[],crRollers=[],crWalls=[],crHeight=[];
 let crL=0,crR=0,crTop=0,crRollY=0,crRad=0,crGap=0,crCx=0,crPanY=0,crPanH=0,crTrayT=0,crTrayB=0,crSlot=0;
 let crRunning=false,crBoost=false,crSpin=0,crGrab=null,crPX=0,crPY=0,crShake=0,crBelt=0;
 let crTotal=0,crEnergy=0,crCharge=0,crPress=0,crLoad=0,crClankT=0,crLineT=null,crHadWork=false,crDown=false;
@@ -3950,7 +4070,11 @@ function crFeed(text,x,y){
     vx:(Math.random()-.5)*1.6,vy:.5,hw:bw/2,hh:bh/2,
     rot:(Math.random()-.5)*.16,rv:(Math.random()-.5)*.02,
     hue:CR_HUE[Math.floor(Math.random()*CR_HUE.length)],text:text||crRnd(),
-    stage:0,hp:1,mhp:1,sq:0,poly:null,cracks:crCracks()};
+    stage:0,hp:1,mhp:1,sq:0,poly:null,cracks:crCracks(),
+    spx:[],spy:[],spr:[]};
+  for (let i=0;i<12;i++){
+    b.spx.push(rnd(-.82,.82)); b.spy.push(rnd(-.72,.72)); b.spr.push(rnd(.06,.20));
+  }
   b.x=Math.max(crL+b.hw+6,Math.min(crR-b.hw-6,b.x));
   b.y=Math.max(crTop+b.hh+2,Math.min(crRollY-crRad-b.hh,b.y));
   crBlocks.push(b); crHadWork=true;
@@ -3961,6 +4085,14 @@ function crSpark(x,y,hue,up){
   if (crSparks.length>280) return;
   crSparks.push({x:x,y:y,vx:(Math.random()-.5)*5.4,vy:up?(-1.5-Math.random()*2.2):(-Math.random()*4-.4),
     life:1,dec:.018+Math.random()*.024,hue:hue,up:!!up});
+}
+function crPuff(x,y,n,hue){
+  if (crSmoke.length>90) return;
+  for (let k=0;k<n;k++)
+    crSmoke.push({x:x+(Math.random()-.5)*crGap*1.4,y:y+(Math.random()-.5)*6,
+      vx:(Math.random()-.5)*1.5,vy:-.35-Math.random()*.9,
+      r:crRad*(.10+Math.random()*.16),gr:.55+Math.random()*.7,
+      life:1,dec:.010+Math.random()*.012,hue:hue===undefined?26:hue});
 }
 function crDustBurst(x,y,hue,n){
   for (let k=0;k<n;k++){
@@ -3974,8 +4106,11 @@ function crShatter(b){
   const i=crBlocks.indexOf(b); if (i<0) return;
   crBlocks.splice(i,1);
   if (crGrab===b) crGrab=null;
-  crShake=Math.min(11,crShake+(b.stage===0?4.6:2.2));
+  crShake=Math.min(11,crShake+(b.stage===0?6.2:2.6));
   crCrack(b.stage===0?1:.45);
+  crFlash.push({x:b.x,y:b.y,r:Math.max(b.hw,b.hh)*(b.stage===0?1.1:.7),
+    mr:Math.max(b.hw,b.hh)*(b.stage===0?4.2:2.2),a:b.stage===0?.85:.5,hue:b.hue});
+  crPuff(b.x,b.y,b.stage===0?(MOBILE?5:8):3,b.hue);
   if (b.stage===0){
     crTotal++;
     for (let k=0;k<3;k++){
@@ -4009,7 +4144,7 @@ function crShutdown(){
 }
 function crushInit(){
   crFit();
-  crBlocks=[]; crDust=[]; crSparks=[]; crHeight=new Array(CR_COLS).fill(0);
+  crBlocks=[]; crDust=[]; crSparks=[]; crSmoke=[]; crFlash=[]; crHeight=new Array(CR_COLS).fill(0);
   crSpin=0; crShake=0; crGrab=null; crBoost=false; crDown=false;
   crTotal=0; crEnergy=0; crCharge=0; crPress=0; crLoad=0;
   crLineEl.classList.remove('on');
@@ -4145,6 +4280,7 @@ function crStep(dt){
       }
       if (Math.random()<.55*crSpin*st)
         crSpark(crCx+(Math.random()-.5)*crGap*2.6,crRollY-crRad*.12,44);
+      if (Math.random()<.14*crSpin*st) crPuff(b.x,crRollY-crRad*.2,1,b.hue);
       if (b.hp<=0){ crShatter(b); continue; }
     }
     if (b!==crGrab&&b.y-b.hh>crRollY+crRad*.75){
@@ -4202,6 +4338,20 @@ function crStep(dt){
     else s.vy+=.26*st;
     s.life-=s.dec*st;
     if (s.life<=0) crSparks.splice(i,1);
+  }
+  /* 粉尘烟雾：往上飘、边飘边散 */
+  for (let i=crSmoke.length-1;i>=0;i--){
+    const s=crSmoke[i];
+    s.x+=s.vx*st; s.y+=s.vy*st;
+    s.vy-=.006*st; s.vx*=Math.pow(.985,st);
+    s.r+=s.gr*st; s.life-=s.dec*st;
+    if (s.life<=0) crSmoke.splice(i,1);
+  }
+  /* 碎裂冲击环 */
+  for (let i=crFlash.length-1;i>=0;i--){
+    const f=crFlash[i];
+    f.r+=(f.mr-f.r)*.20*st; f.a-=.055*st;
+    if (f.a<=0) crFlash.splice(i,1);
   }
 
   /* 压力表 / 震动 / 收尾 */
@@ -4268,6 +4418,14 @@ function crRoller(ctx,R){
   ctx.beginPath(); ctx.moveTo(-R.r*.24,0); ctx.lineTo(R.r*.24,0);
   ctx.strokeStyle='rgba(40,52,66,.42)'; ctx.lineWidth=2; ctx.stroke();
   ctx.restore();
+  /* 转速高时叠一圈运动模糊，齿看着在飞 */
+  const sp=Math.min(1,Math.abs(R.w)/.30);
+  if (sp>.12){
+    ctx.save(); ctx.globalAlpha=sp*.30;
+    ctx.strokeStyle='rgba(226,236,246,.9)'; ctx.lineWidth=R.r*.20;
+    ctx.beginPath(); ctx.arc(R.x,R.y,R.r*.90,0,6.283); ctx.stroke();
+    ctx.restore();
+  }
 }
 function crTextW(t){ let n=0; for (const ch of t) n+=ch.charCodeAt(0)>255?1:.56; return n||1; }
 function crDrawBlock(ctx,b){
@@ -4278,17 +4436,32 @@ function crDrawBlock(ctx,b){
   if (b.stage===0){
     const rd=Math.min(w,h)*.22;
     ctx.beginPath(); ctx.roundRect(-b.hw,-b.hh,w,h,rd);
-    const g=ctx.createLinearGradient(0,-b.hh,0,b.hh);
-    g.addColorStop(0,'hsl('+hu+',74%,'+(72-dmg*18)+'%)');
-    g.addColorStop(.52,'hsl('+hu+',66%,'+(57-dmg*15)+'%)');
-    g.addColorStop(1,'hsl('+hu+',60%,'+(44-dmg*12)+'%)');
+    const g=ctx.createLinearGradient(-b.hw*.4,-b.hh,b.hw*.5,b.hh);
+    g.addColorStop(0,'hsl('+hu+',68%,'+(74-dmg*20)+'%)');
+    g.addColorStop(.42,'hsl('+hu+',60%,'+(58-dmg*16)+'%)');
+    g.addColorStop(1,'hsl('+hu+',54%,'+(40-dmg*12)+'%)');
     ctx.fillStyle=g;
-    ctx.shadowColor='rgba(20,30,45,.35)'; ctx.shadowBlur=10; ctx.shadowOffsetY=3;
+    ctx.shadowColor='rgba(14,22,36,.45)'; ctx.shadowBlur=12; ctx.shadowOffsetY=4;
     ctx.fill(); ctx.shadowBlur=0; ctx.shadowOffsetY=0;
-    ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.lineWidth=1.4; ctx.stroke();
     ctx.save(); ctx.clip();
-    ctx.fillStyle='rgba(255,255,255,.20)';
-    ctx.fillRect(-b.hw,-b.hh,w,h*.34);
+    /* 顶面斜切亮带 + 底部暗边，方块像有厚度的料块而不是贴纸 */
+    const tg=ctx.createLinearGradient(0,-b.hh,0,-b.hh+h*.42);
+    tg.addColorStop(0,'rgba(255,255,255,.34)'); tg.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=tg; ctx.fillRect(-b.hw,-b.hh,w,h*.42);
+    const bgd=ctx.createLinearGradient(0,b.hh-h*.34,0,b.hh);
+    bgd.addColorStop(0,'rgba(0,0,0,0)'); bgd.addColorStop(1,'rgba(0,0,0,.28)');
+    ctx.fillStyle=bgd; ctx.fillRect(-b.hw,b.hh-h*.34,w,h*.34);
+    /* 骨料颗粒：让它看着像压制的料砖 */
+    ctx.fillStyle='rgba(255,255,255,.13)';
+    for (let i=0;i<7;i++){
+      const gx2=b.spx[i]*b.hw,gy2=b.spy[i]*b.hh,gr=b.spr[i]*b.hh;
+      ctx.beginPath(); ctx.arc(gx2,gy2,gr,0,6.283); ctx.fill();
+    }
+    ctx.fillStyle='rgba(20,8,18,.16)';
+    for (let i=7;i<12;i++){
+      const gx2=b.spx[i]*b.hw,gy2=b.spy[i]*b.hh,gr=b.spr[i]*b.hh;
+      ctx.beginPath(); ctx.arc(gx2,gy2,gr,0,6.283); ctx.fill();
+    }
     if (dmg>.10){
       ctx.strokeStyle='rgba(28,10,24,.45)'; ctx.lineWidth=Math.max(1,b.hh*.07); ctx.lineCap='round';
       const n=Math.min(4,Math.ceil(dmg*4));
@@ -4355,11 +4528,20 @@ function drawCrush(dt){
   crStep(dt);
   ctx.setTransform(DPR,0,0,DPR,0,0);
   const bg=ctx.createLinearGradient(0,0,0,h);
-  bg.addColorStop(0,'#f3f6fa'); bg.addColorStop(.6,'#e4e9f1'); bg.addColorStop(1,'#d4dbe6');
+  bg.addColorStop(0,'#f6eef0'); bg.addColorStop(.52,'#e9dfe6'); bg.addColorStop(1,'#d8ccd8');
   ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
-  ctx.strokeStyle='rgba(120,140,165,.09)'; ctx.lineWidth=1;
+  ctx.strokeStyle='rgba(150,120,140,.08)'; ctx.lineWidth=1;
   for (let x=0;x<w;x+=34){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
   for (let y=0;y<h;y+=34){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+  /* 车间顶灯：机器上方一束暖光，画面不再是一片平灰 */
+  const lampG=ctx.createRadialGradient(crCx,crTop-h*.16,0,crCx,crTop-h*.16,Math.max(w,h)*.62);
+  lampG.addColorStop(0,'rgba(255,238,214,.55)');
+  lampG.addColorStop(.42,'rgba(255,226,206,.16)');
+  lampG.addColorStop(1,'rgba(120,90,120,0)');
+  ctx.fillStyle=lampG; ctx.fillRect(0,0,w,h);
+  const vig=ctx.createRadialGradient(crCx,h*.5,Math.min(w,h)*.28,crCx,h*.5,Math.max(w,h)*.72);
+  vig.addColorStop(0,'rgba(0,0,0,0)'); vig.addColorStop(1,'rgba(58,36,58,.26)');
+  ctx.fillStyle=vig; ctx.fillRect(0,0,w,h);
 
   const sh=Math.min(crShake,10);
   ctx.translate((Math.random()-.5)*sh,(Math.random()-.5)*sh);
@@ -4368,16 +4550,33 @@ function drawCrush(dt){
   const bx=crL-16,by=crTop-24,bw2=(crR-crL)+32,bh2=(crTrayB+22)-by;
   ctx.beginPath(); ctx.roundRect(bx,by,bw2,bh2,20);
   const mg=ctx.createLinearGradient(bx,0,bx+bw2,0);
-  mg.addColorStop(0,'#a7b4c2'); mg.addColorStop(.16,'#e4ebf2');
-  mg.addColorStop(.5,'#ccd5df'); mg.addColorStop(.86,'#dfe6ee'); mg.addColorStop(1,'#9dabbb');
+  mg.addColorStop(0,'#5d6472'); mg.addColorStop(.10,'#8e97a6');
+  mg.addColorStop(.30,'#b9c2ce'); mg.addColorStop(.52,'#98a2b0');
+  mg.addColorStop(.80,'#aeb8c5'); mg.addColorStop(1,'#575e6b');
   ctx.fillStyle=mg;
-  ctx.shadowColor='rgba(60,80,110,.30)'; ctx.shadowBlur=26; ctx.shadowOffsetY=10;
+  ctx.shadowColor='rgba(40,26,44,.42)'; ctx.shadowBlur=30; ctx.shadowOffsetY=12;
   ctx.fill(); ctx.shadowBlur=0; ctx.shadowOffsetY=0;
-  ctx.strokeStyle='rgba(255,255,255,.7)'; ctx.lineWidth=1.4; ctx.stroke();
-  ctx.fillStyle='rgba(108,124,144,.5)';
-  [[bx+13,by+13],[bx+bw2-13,by+13],[bx+13,by+bh2-13],[bx+bw2-13,by+bh2-13]].forEach(p=>{
-    ctx.beginPath(); ctx.arc(p[0],p[1],3.4,0,6.283); ctx.fill();
-  });
+  /* 拉丝纹理 */
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(bx,by,bw2,bh2,20); ctx.clip();
+  ctx.globalAlpha=.05; ctx.strokeStyle='#fff'; ctx.lineWidth=1;
+  for (let x=bx;x<bx+bw2;x+=5){ ctx.beginPath(); ctx.moveTo(x,by); ctx.lineTo(x,by+bh2); ctx.stroke(); }
+  ctx.globalAlpha=1;
+  /* 顶部受光 */
+  const topLit=ctx.createLinearGradient(0,by,0,by+bh2*.30);
+  topLit.addColorStop(0,'rgba(255,246,232,.30)'); topLit.addColorStop(1,'rgba(255,246,232,0)');
+  ctx.fillStyle=topLit; ctx.fillRect(bx,by,bw2,bh2*.30);
+  ctx.restore();
+  ctx.strokeStyle='rgba(255,252,246,.55)'; ctx.lineWidth=1.4; ctx.stroke();
+  /* 铆钉：四角 + 两侧竖排 */
+  const rivet=(x,y)=>{
+    ctx.beginPath(); ctx.arc(x,y,3.4,0,6.283);
+    const rg=ctx.createRadialGradient(x-1.2,y-1.4,.3,x,y,3.6);
+    rg.addColorStop(0,'rgba(255,255,255,.85)'); rg.addColorStop(1,'rgba(72,80,94,.85)');
+    ctx.fillStyle=rg; ctx.fill();
+  };
+  [[bx+13,by+13],[bx+bw2-13,by+13],[bx+13,by+bh2-13],[bx+bw2-13,by+bh2-13]].forEach(p=>rivet(p[0],p[1]));
+  for (let y=by+38;y<by+bh2-30;y+=Math.max(34,bh2/7)){ rivet(bx+13,y); rivet(bx+bw2-13,y); }
 
   /* 料斗内腔 + 方块 */
   ctx.save();
@@ -4423,6 +4622,43 @@ function drawCrush(dt){
   ctx.fillStyle='#e7edf4';
   ctx.beginPath(); ctx.roundRect(crL-18,crTop-22,(crR-crL)+36,15,7); ctx.fill();
   ctx.strokeStyle='rgba(120,138,158,.6)'; ctx.lineWidth=1.2; ctx.stroke();
+
+  /* 粉尘烟雾（在火花下面一层） */
+  ctx.save();
+  for (const s of crSmoke){
+    const a=Math.max(0,s.life)*.30;
+    const g2=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r);
+    g2.addColorStop(0,'hsla('+s.hue+',34%,86%,'+a+')');
+    g2.addColorStop(1,'hsla('+s.hue+',30%,78%,0)');
+    ctx.fillStyle=g2;
+    ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,6.283); ctx.fill();
+  }
+  ctx.restore();
+
+  /* 咬合口的过载热光：负载越大越亮 */
+  if (crSpin>.05&&crLoad>.02){
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    const hg=ctx.createRadialGradient(crCx,crRollY-crRad*.1,0,crCx,crRollY-crRad*.1,crRad*1.5);
+    const ha=Math.min(.55,crLoad*.62)*Math.min(1,crSpin);
+    hg.addColorStop(0,'rgba(255,214,140,'+ha+')');
+    hg.addColorStop(.45,'rgba(255,140,60,'+(ha*.5)+')');
+    hg.addColorStop(1,'rgba(255,90,40,0)');
+    ctx.fillStyle=hg;
+    ctx.beginPath(); ctx.arc(crCx,crRollY-crRad*.1,crRad*1.5,0,6.283); ctx.fill();
+    ctx.restore();
+  }
+
+  /* 碎裂冲击环 */
+  ctx.save(); ctx.globalCompositeOperation='lighter';
+  for (const f of crFlash){
+    ctx.strokeStyle='hsla('+f.hue+',100%,78%,'+Math.max(0,f.a)+')';
+    ctx.lineWidth=Math.max(1,3.2*f.a);
+    ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,6.283); ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,'+Math.max(0,f.a*.55)+')';
+    ctx.lineWidth=Math.max(.8,1.6*f.a);
+    ctx.beginPath(); ctx.arc(f.x,f.y,f.r*.62,0,6.283); ctx.stroke();
+  }
+  ctx.restore();
 
   /* 火花 */
   ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.lineCap='round';
@@ -4475,9 +4711,21 @@ function drawCrush(dt){
   ctx.fillStyle='rgba(228,237,247,.5)'; ctx.fill();
   ctx.clip();
   for (const d of crDust){
-    ctx.fillStyle='hsl('+d.hue+',66%,'+(d.set?56:64)+'%)';
+    /* 越靠下越暗，堆体有体积不是一摊平色 */
+    const dep=Math.max(0,Math.min(1,(d.y-crTrayT)/Math.max(1,crTrayB-crTrayT)));
+    ctx.fillStyle='hsl('+d.hue+','+(64-dep*20)+'%,'+((d.set?58:66)-dep*20)+'%)';
     ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,6.283); ctx.fill();
   }
+  /* 堆顶一层薄亮边 */
+  ctx.save(); ctx.globalCompositeOperation='lighter';
+  const cw2=crColW();
+  for (let c=0;c<CR_COLS;c++){
+    if (crHeight[c]<1.5) continue;
+    const px2=tl+c*cw2+cw2*.5, py2=crTrayB-6-crHeight[c];
+    ctx.fillStyle='rgba(255,240,225,.16)';
+    ctx.beginPath(); ctx.ellipse(px2,py2,cw2*.85,2.6,0,0,6.283); ctx.fill();
+  }
+  ctx.restore();
   const sg=ctx.createLinearGradient(tl,0,tl+(tr-tl)*.3,0);
   sg.addColorStop(0,'rgba(255,255,255,.5)'); sg.addColorStop(1,'rgba(255,255,255,0)');
   ctx.fillStyle=sg; ctx.fillRect(tl-6,crTrayT-4,(tr-tl)*.32,(crTrayB-crTrayT)+10);
@@ -4563,7 +4811,7 @@ crFillBtn.addEventListener('click',e=>{
 });
 crClearBtn.addEventListener('click',e=>{
   e.stopPropagation(); audio();
-  crBlocks=[]; crDust=[]; crSparks=[];
+  crBlocks=[]; crDust=[]; crSparks=[]; crSmoke=[]; crFlash=[];
   crHeight=new Array(CR_COLS).fill(0);
   crPress=0; crHadWork=false;
   bell(392,.10,.5);
